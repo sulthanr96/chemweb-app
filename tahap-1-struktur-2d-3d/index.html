@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChemWebApp — Tahap 1: SMILES Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1410;
+    --panel: #161c17;
+    --panel-2: #1c231d;
+    --line: #2a332b;
+    --ink: #eef2ea;
+    --muted: #8a998a;
+    --accent: #4fd1c5;
+    --accent-dim: #2f6e68;
+    --amber: #e8b339;
+    --error: #e2685a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity: 0.25;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+  }
+
+  header {
+    position: relative;
+    padding: 48px 6vw 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 10px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    color: var(--muted);
+    max-width: 560px;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  main {
+    padding: 36px 6vw 72px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  #smiles-input {
+    flex: 1;
+    min-width: 240px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  #smiles-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.15);
+  }
+  #smiles-input::placeholder { color: var(--muted); }
+
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .preset-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* loading bar shown while RDKit/OpenBabel bootstrap from CDN */
+  .boot-bar {
+    height: 2px;
+    background: var(--line);
+    overflow: hidden;
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+  .boot-bar-fill {
+    height: 100%;
+    width: 40%;
+    background: var(--accent);
+    animation: boot-slide 1.1s ease-in-out infinite;
+  }
+  .boot-bar[hidden] { display: none; }
+  @keyframes boot-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-bar-fill { animation: none; width: 100%; }
+  }
+
+  .status-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    min-height: 20px;
+    margin-bottom: 22px;
+    color: var(--muted);
+  }
+  .status-line.error { color: var(--error); }
+  .status-line.ok { color: var(--accent); }
+  .status-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .formula-ticker {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 54px);
+    letter-spacing: 0.01em;
+    margin: 4px 0 14px;
+    min-height: 1.2em;
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .formula-ticker sub { font-size: 0.55em; color: var(--accent); }
+  .formula-ticker .mw {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--muted);
+  }
+
+  .canonical-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .canonical-row .canonical-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .canonical-row code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 6px;
+    word-break: break-all;
+  }
+
+  .descriptor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .descriptor-grid[hidden] { display: none; }
+  .descriptor-cell {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .descriptor-cell .d-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .descriptor-cell .d-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+  }
+
+  .icon-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+  .icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 18px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--panel-2);
+    border: 1px solid var(--accent-dim);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 50;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 800px) {
+    .panels { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .panel-head .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .panel-body {
+    height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  #viewer3d { width: 100%; height: 100%; }
+  #viewer2d svg { max-width: 100%; max-height: 100%; }
+
+  #jsme-container {
+    background: #f4f6f2;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .viewer-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 5;
+  }
+  .viewer-controls .icon-btn {
+    background: rgba(22, 28, 23, 0.85);
+    backdrop-filter: blur(2px);
+  }
+
+  .input-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .input-tab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .input-tab:hover { color: var(--ink); border-color: var(--accent-dim); }
+  .input-tab[aria-selected="true"] {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .input-panel[hidden] { display: none; }
+
+  .empty-state {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    text-align: center;
+    padding: 0 20px;
+  }
+
+  .hint-row {
+    margin-top: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .hint-row kbd {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .stage-nav {
+    margin-top: 14px;
+  }
+  .stage-nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--accent-dim);
+    padding: 6px 12px;
+    border-radius: 999px;
+    transition: all 0.15s ease;
+  }
+  .stage-nav a:hover { background: var(--accent-dim); color: var(--ink); }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <div class="eyebrow">ChemWebApp — Tahap 1 / 5</div>
+  <h1>SMILES → Struktur 2D & 3D</h1>
+  <p>Masukkan notasi SMILES (atau gambar strukturnya langsung), lihat molekulnya dalam bentuk 2D dan model 3D yang bisa diputar.</p>
+  <nav class="stage-nav"><a href="../tahap-2-pencarian-sifat/index.html">Tahap 2 — Pencarian nama & sifat →</a></nav>
+</header>
+
+<main>
+  <div class="boot-bar" id="boot-bar"><div class="boot-bar-fill"></div></div>
+
+  <div class="input-tabs" role="tablist" aria-label="Metode input struktur">
+    <button class="input-tab" id="tab-text" role="tab" aria-selected="true" aria-controls="input-panel-text">Ketik SMILES</button>
+    <button class="input-tab" id="tab-draw" role="tab" aria-selected="false" aria-controls="input-panel-draw">Gambar Struktur</button>
+  </div>
+
+  <div class="input-panel" id="input-panel-text" role="tabpanel" aria-labelledby="tab-text">
+    <div class="input-row">
+      <label for="smiles-input" class="visually-hidden">Notasi SMILES</label>
+      <input id="smiles-input" type="text" placeholder="Masukkan SMILES, mis. CC(=O)Oc1ccccc1C(=O)O (aspirin)" autocomplete="off" spellcheck="false" />
+      <button id="reset-btn" class="icon-btn" type="button" aria-label="Kosongkan input" title="Kosongkan input">✕ Reset</button>
+    </div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="input-panel" id="input-panel-draw" role="tabpanel" aria-labelledby="tab-draw" hidden>
+    <div class="panel" style="margin-bottom: 20px;">
+      <div class="panel-head">
+        <span class="label">Gambar Struktur</span>
+        <span class="tag">JSME</span>
+      </div>
+      <div class="panel-body" id="jsme-panel-body" style="height: auto; padding: 18px; flex-direction: column; gap: 12px; overflow-x: auto;">
+        <div id="jsme-container"></div>
+        <div style="display:flex; justify-content: flex-end; width: 100%;">
+          <button id="jsme-use-btn" class="preset-btn" style="color: var(--accent); border-color: var(--accent-dim);">Pakai struktur ini ↓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-line" id="status">Menunggu input SMILES…</div>
+
+  <div class="formula-ticker" id="formula-ticker"></div>
+
+  <div class="canonical-row" id="canonical-row" hidden>
+    <span class="canonical-label">SMILES kanonik:</span>
+    <code id="canonical-smiles"></code>
+    <button class="icon-btn" id="copy-smiles-btn" type="button">⧉ Salin</button>
+  </div>
+
+  <div class="descriptor-grid" id="descriptor-grid" hidden>
+    <div class="descriptor-cell"><span class="d-label">LogP</span><span class="d-value" id="d-logp">–</span></div>
+    <div class="descriptor-cell"><span class="d-label">H-bond donor</span><span class="d-value" id="d-hbd">–</span></div>
+    <div class="descriptor-cell"><span class="d-label">H-bond akseptor</span><span class="d-value" id="d-hba">–</span></div>
+    <div class="descriptor-cell"><span class="d-label">TPSA</span><span class="d-value" id="d-tpsa">–</span></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Struktur 2D</span>
+        <span class="tag">RDKit.js</span>
+      </div>
+      <div class="panel-actions">
+        <button class="icon-btn" id="download-2d-btn" type="button" disabled>⭳ Unduh SVG</button>
+      </div>
+      <div class="panel-body" id="viewer2d">
+        <div class="empty-state">Struktur 2D akan muncul di sini</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Struktur 3D</span>
+        <span class="tag">3Dmol.js</span>
+      </div>
+      <div class="panel-actions">
+        <button class="icon-btn" id="style-3d-btn" type="button" disabled>◐ Gaya: Stick+Sphere</button>
+        <button class="icon-btn" id="reset-cam-btn" type="button" disabled>⟲ Reset tampilan</button>
+        <button class="icon-btn" id="download-3d-btn" type="button" disabled>⭳ Unduh MOL</button>
+      </div>
+      <div class="panel-body" id="viewer3d">
+        <div class="empty-state" id="viewer3d-empty">Model 3D akan muncul di sini — bisa diputar & zoom</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint-row">
+    <span><kbd>drag</kbd> putar model 3D</span>
+    <span><kbd>scroll</kbd> zoom model 3D</span>
+    <span>Sumber parsing: RDKit (WebAssembly), berjalan di browser</span>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<footer>ChemWebApp · Tahap 1 dari 5 · dibangun bertahap sebagai proyek belajar kimia + web</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js"></script>
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/jsme-editor/jsme-editor.github.io@main/dist/jsme/jsme.nocache.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/partridgejiang/cheminfo-to-web@master/OpenBabel3/OpenBabel-js/bin/openbabel.js"></script>
+<script>
+(function () {
+  const input = document.getElementById('smiles-input');
+  const statusEl = document.getElementById('status');
+  const formulaEl = document.getElementById('formula-ticker');
+  const viewer2dEl = document.getElementById('viewer2d');
+  const viewer3dEl = document.getElementById('viewer3d');
+  const presetsEl = document.getElementById('presets');
+  const resetBtn = document.getElementById('reset-btn');
+  const bootBar = document.getElementById('boot-bar');
+  const toastEl = document.getElementById('toast');
+  const canonicalRow = document.getElementById('canonical-row');
+  const canonicalSmilesEl = document.getElementById('canonical-smiles');
+  const copySmilesBtn = document.getElementById('copy-smiles-btn');
+  const descriptorGrid = document.getElementById('descriptor-grid');
+  const dLogp = document.getElementById('d-logp');
+  const dHbd = document.getElementById('d-hbd');
+  const dHba = document.getElementById('d-hba');
+  const dTpsa = document.getElementById('d-tpsa');
+  const download2dBtn = document.getElementById('download-2d-btn');
+  const download3dBtn = document.getElementById('download-3d-btn');
+  const style3dBtn = document.getElementById('style-3d-btn');
+  const resetCamBtn = document.getElementById('reset-cam-btn');
+  const tabText = document.getElementById('tab-text');
+  const tabDraw = document.getElementById('tab-draw');
+  const panelText = document.getElementById('input-panel-text');
+  const panelDraw = document.getElementById('input-panel-draw');
+
+  let toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  async function copyText(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`${label} disalin ke clipboard`);
+    } catch (e) {
+      showToast('Gagal menyalin — coba salin manual');
+    }
+  }
+
+  function downloadBlob(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function switchTab(which) {
+    const showDraw = which === 'draw';
+    tabText.setAttribute('aria-selected', String(!showDraw));
+    tabDraw.setAttribute('aria-selected', String(showDraw));
+    panelText.hidden = showDraw;
+    panelDraw.hidden = !showDraw;
+  }
+  tabText.addEventListener('click', () => switchTab('text'));
+  tabDraw.addEventListener('click', () => switchTab('draw'));
+  switchTab('text');
+
+  resetBtn.addEventListener('click', () => {
+    input.value = '';
+    input.focus();
+    handleInput();
+  });
+
+  const PRESETS = [
+    { name: 'Aspirin', smiles: 'CC(=O)Oc1ccccc1C(=O)O' },
+    { name: 'Kafein', smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C' },
+    { name: 'Etanol', smiles: 'CCO' },
+    { name: 'Benzena', smiles: 'c1ccccc1' },
+    { name: 'Glukosa', smiles: 'C(C1C(C(C(C(O1)O)O)O)O)O' },
+    { name: 'Ibuprofen', smiles: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O' }
+  ];
+
+  PRESETS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = p.name;
+    btn.addEventListener('click', () => {
+      input.value = p.smiles;
+      handleInput();
+    });
+    presetsEl.appendChild(btn);
+  });
+
+  let RDKitModule = null;
+  let glviewer = null;
+  let rdkitReady = false;
+  let debounceTimer = null;
+
+  function setStatus(msg, kind, hint) {
+    statusEl.innerHTML = '';
+    statusEl.appendChild(document.createTextNode(msg));
+    statusEl.className = 'status-line' + (kind ? ' ' + kind : '');
+    if (hint) {
+      const hintEl = document.createElement('span');
+      hintEl.className = 'status-hint';
+      hintEl.textContent = hint;
+      statusEl.appendChild(hintEl);
+    }
+  }
+
+  // Heuristik cepat sebelum parsing RDKit, biar pesan error lebih spesifik
+  // daripada cuma "tidak valid" — bukan validator penuh, cuma pengecekan
+  // kurung/bracket/ring-bond yang paling sering ketik salah.
+  function guessSmilesIssue(smiles) {
+    let round = 0, square = 0;
+    const ringDigits = {};
+    for (let i = 0; i < smiles.length; i++) {
+      const c = smiles[i];
+      if (c === '(') round++;
+      else if (c === ')') round--;
+      else if (c === '[') square++;
+      else if (c === ']') square--;
+      else if (/[0-9]/.test(c)) ringDigits[c] = (ringDigits[c] || 0) + 1;
+      if (round < 0) return 'Ada tanda kurung " ) " tanpa pasangan pembuka.';
+    }
+    if (round > 0) return 'Ada tanda kurung " ( " yang belum ditutup.';
+    if (square !== 0) return 'Ada tanda kurung siku " [ " atau " ] " yang tidak seimbang.';
+    for (const d in ringDigits) {
+      if (ringDigits[d] % 2 !== 0) return `Angka penutup cincin "${d}" muncul ganjil kali — biasanya harus berpasangan.`;
+    }
+    return null;
+  }
+
+  function fmtNum(v, digits) {
+    return (typeof v === 'number' && !isNaN(v)) ? v.toFixed(digits) : '–';
+  }
+
+  function setFormula(mol) {
+    try {
+      const descriptors = JSON.parse(mol.get_descriptors());
+      const formula = mol.get_molformula ? mol.get_molformula() : '';
+      const mw = descriptors.exactmw ? descriptors.exactmw.toFixed(2) : '';
+      formulaEl.innerHTML = formula
+        ? `<span>${formula.replace(/(\d+)/g, '<sub>$1</sub>')}</span><span class="mw">MW ${mw} g/mol</span>`
+        : '';
+
+      dLogp.textContent = fmtNum(descriptors.CrippenClogP, 2);
+      dHbd.textContent = (typeof descriptors.NumHBD === 'number') ? descriptors.NumHBD : '–';
+      dHba.textContent = (typeof descriptors.NumHBA === 'number') ? descriptors.NumHBA : '–';
+      dTpsa.textContent = fmtNum(descriptors.tpsa, 1);
+      descriptorGrid.hidden = false;
+
+      let canonical = '';
+      try { canonical = mol.get_smiles(); } catch (e) { canonical = ''; }
+      if (canonical) {
+        canonicalSmilesEl.textContent = canonical;
+        canonicalRow.hidden = false;
+      } else {
+        canonicalRow.hidden = true;
+      }
+    } catch (e) {
+      formulaEl.innerHTML = '';
+      descriptorGrid.hidden = true;
+      canonicalRow.hidden = true;
+    }
+  }
+
+  function clearFormula() {
+    formulaEl.innerHTML = '';
+    descriptorGrid.hidden = true;
+    canonicalRow.hidden = true;
+    canonicalSmilesEl.textContent = '';
+  }
+
+  copySmilesBtn.addEventListener('click', () => {
+    const text = canonicalSmilesEl.textContent;
+    if (text) copyText(text, 'SMILES kanonik');
+  });
+
+  let lastSvg = null;
+
+  function render2D(mol) {
+    try {
+      const svg = mol.get_svg(360, 360);
+      viewer2dEl.innerHTML = svg;
+      lastSvg = svg;
+      download2dBtn.disabled = false;
+    } catch (e) {
+      viewer2dEl.innerHTML = '<div class="empty-state">Gagal render struktur 2D</div>';
+      lastSvg = null;
+      download2dBtn.disabled = true;
+    }
+  }
+
+  download2dBtn.addEventListener('click', () => {
+    if (lastSvg) downloadBlob(lastSvg, 'struktur-2d.svg', 'image/svg+xml');
+  });
+
+  // Catatan implementasi 3D — dua lapis:
+  // 1) OpenBabel (WASM, jalan 100% di browser, lokal): operasi "Gen3D" bisa generate
+  //    koordinat 3D untuk SMILES APA PUN, tidak tergantung database luar. RDKit.js
+  //    sendiri tidak punya generator konformer 3D (ETKDG) di build WASM-nya — lihat
+  //    https://github.com/rdkit/rdkit-js/issues/338 — makanya kita pakai OpenBabel
+  //    khusus untuk langkah ini, RDKit tetap dipakai untuk parsing/2D/validasi.
+  //    CATATAN JUJUR: build OpenBabel WASM ini berasal dari proyek komunitas
+  //    (cheminfo-to-web, non-resmi dari tim OpenBabel), jadi kalau CDN-nya berubah
+  //    atau ada isu kompatibilitas browser, ini bisa gagal — makanya ada fallback #2.
+  // 2) Fallback: PubChem PUG REST (SMILES -> CID -> SDF konformer 3D). Hanya jalan
+  //    untuk senyawa yang memang terdaftar di PubChem.
+  let obReady = false;
+  let ObInstance = null;
+
+  function initOpenBabel() {
+    if (typeof OpenBabelModule !== 'function') {
+      console.warn('OpenBabelModule tidak termuat dari CDN — 3D akan pakai fallback PubChem saja.');
+      return;
+    }
+    try {
+      const ob = OpenBabelModule();
+      ob.onRuntimeInitialized = function () {
+        ObInstance = ob;
+        obReady = true;
+        console.log('OpenBabel (WASM) siap — generate 3D lokal aktif untuk SMILES apa pun.');
+      };
+    } catch (e) {
+      console.warn('Inisialisasi OpenBabel gagal:', e);
+    }
+  }
+  initOpenBabel();
+
+  function gen3DWithOpenBabel(molblock2d) {
+    if (!obReady || !ObInstance) return null;
+    let conv = null;
+    let mol = null;
+    try {
+      conv = new ObInstance.ObConversionWrapper();
+      conv.setInFormat('', 'mol');
+      mol = new ObInstance.OBMol();
+      conv.readString(mol, molblock2d);
+
+      const gen3d = ObInstance.OBOp.FindType('Gen3D');
+      if (!gen3d || !gen3d.Do(mol, '')) throw new Error('Operasi Gen3D OpenBabel gagal untuk molekul ini');
+
+      conv.setOutFormat('', 'mol');
+      return conv.writeString(mol, false);
+    } catch (e) {
+      console.warn('Gen3D via OpenBabel gagal:', e);
+      return null;
+    } finally {
+      if (conv) conv.delete();
+      if (mol && typeof mol.delete === 'function') mol.delete();
+    }
+  }
+
+  async function fetch3DFromPubChem(smiles) {
+    const encoded = encodeURIComponent(smiles);
+    const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/cids/JSON`);
+    if (!cidRes.ok) throw new Error('Senyawa tidak ditemukan di PubChem');
+    const cidData = await cidRes.json();
+    const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
+    if (!cid) throw new Error('CID tidak ditemukan');
+    const sdfRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`);
+    if (!sdfRes.ok) throw new Error('PubChem tidak punya konformer 3D untuk senyawa ini');
+    return await sdfRes.text();
+  }
+
+  let generation3DToken = 0;
+
+  async function generate3D(smiles, molblock2d) {
+    const myToken = ++generation3DToken;
+
+    // Lapis 1: OpenBabel lokal — bisa untuk SMILES apa pun
+    if (obReady) {
+      const obResult = gen3DWithOpenBabel(molblock2d);
+      if (myToken !== generation3DToken) return;
+      if (obResult) {
+        setStatus('SMILES valid — 3D digenerate lokal (OpenBabel).', 'ok');
+        render3D(obResult);
+        return;
+      }
+    }
+
+    // Lapis 2: fallback PubChem
+    viewer3dEl.innerHTML = '<div class="empty-state">Mesin 3D lokal belum siap/gagal — mencoba ambil dari PubChem…</div>';
+    try {
+      const sdf = await fetch3DFromPubChem(smiles);
+      if (myToken !== generation3DToken) return;
+      setStatus('SMILES valid — 3D dari PubChem (fallback).', 'ok');
+      render3D(sdf);
+    } catch (e) {
+      if (myToken !== generation3DToken) return;
+      console.warn('Generate 3D gagal (OpenBabel & PubChem):', e);
+      viewer3dEl.innerHTML = '<div class="empty-state">Belum bisa menampilkan 3D untuk senyawa ini (OpenBabel & PubChem sama-sama gagal).<br/>Struktur 2D di sebelah kiri tetap valid.</div>';
+      lastMolblock3d = null;
+      download3dBtn.disabled = true;
+      style3dBtn.disabled = true;
+      resetCamBtn.disabled = true;
+    }
+  }
+
+  const STYLE_3D_MODES = [
+    { label: 'Stick+Sphere', apply: () => ({ stick: { radius: 0.15, colorscheme: 'Jmol' }, sphere: { scale: 0.28, colorscheme: 'Jmol' } }) },
+    { label: 'Space-filling', apply: () => ({ sphere: { colorscheme: 'Jmol' } }) },
+    { label: 'Wireframe', apply: () => ({ line: { colorscheme: 'Jmol' } }) }
+  ];
+  let style3dIndex = 0;
+  let lastMolblock3d = null;
+
+  function applyCurrentStyle() {
+    if (!glviewer) return;
+    glviewer.setStyle({}, STYLE_3D_MODES[style3dIndex].apply());
+    glviewer.render();
+    style3dBtn.textContent = `◐ Gaya: ${STYLE_3D_MODES[style3dIndex].label}`;
+  }
+
+  style3dBtn.addEventListener('click', () => {
+    if (!glviewer) return;
+    style3dIndex = (style3dIndex + 1) % STYLE_3D_MODES.length;
+    applyCurrentStyle();
+  });
+
+  resetCamBtn.addEventListener('click', () => {
+    if (!glviewer) return;
+    glviewer.zoomTo();
+    glviewer.render();
+  });
+
+  download3dBtn.addEventListener('click', () => {
+    if (lastMolblock3d) downloadBlob(lastMolblock3d, 'struktur-3d.mol', 'chemical/x-mdl-molfile');
+  });
+
+  function render3D(molblock) {
+    if (!glviewer) {
+      viewer3dEl.innerHTML = '';
+      glviewer = $3Dmol.createViewer(viewer3dEl, { backgroundColor: '#161c17' });
+    }
+    glviewer.removeAllModels();
+    glviewer.addModel(molblock, 'mol');
+    applyCurrentStyle();
+    glviewer.zoomTo();
+    glviewer.render();
+
+    lastMolblock3d = molblock;
+    download3dBtn.disabled = false;
+    style3dBtn.disabled = false;
+    resetCamBtn.disabled = false;
+  }
+
+  function showEmpty() {
+    viewer2dEl.innerHTML = '<div class="empty-state">Struktur 2D akan muncul di sini</div>';
+    viewer3dEl.innerHTML = '<div class="empty-state">Model 3D akan muncul di sini — bisa diputar & zoom</div>';
+    glviewer = null;
+    lastSvg = null;
+    lastMolblock3d = null;
+    download2dBtn.disabled = true;
+    download3dBtn.disabled = true;
+    style3dBtn.disabled = true;
+    resetCamBtn.disabled = true;
+    clearFormula();
+  }
+
+  function handleInput() {
+    const smiles = input.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (!smiles) {
+      setStatus('Menunggu input SMILES…');
+      showEmpty();
+      return;
+    }
+
+    if (!rdkitReady) {
+      setStatus('Memuat mesin kimia (RDKit)…');
+      return;
+    }
+
+    debounceTimer = setTimeout(() => {
+      let mol;
+      try {
+        mol = RDKitModule.get_mol(smiles);
+      } catch (e) {
+        mol = null;
+      }
+
+      if (!mol || !mol.is_valid()) {
+        const hint = guessSmilesIssue(smiles);
+        setStatus('SMILES tidak valid — periksa kembali notasinya.', 'error', hint);
+        showEmpty();
+        if (mol) mol.delete();
+        return;
+      }
+
+      setStatus('SMILES valid.', 'ok');
+      setFormula(mol);
+      render2D(mol);
+
+      let molblock2d = null;
+      try { molblock2d = mol.get_molblock(); } catch (e) { molblock2d = null; }
+      mol.delete();
+
+      generate3D(smiles, molblock2d);
+    }, 220);
+  }
+
+  window.initRDKitModule().then((instance) => {
+    RDKitModule = instance;
+    rdkitReady = true;
+    bootBar.hidden = true;
+    setStatus('Menunggu input SMILES…');
+    if (input.value.trim()) handleInput();
+  }).catch(() => {
+    bootBar.hidden = true;
+    setStatus('Gagal memuat RDKit. Cek koneksi internet lalu muat ulang halaman.', 'error');
+  });
+
+  input.addEventListener('input', handleInput);
+
+  // Terima ?smiles=... di URL (dipakai Tahap 2 untuk deep-link ke viewer ini)
+  const urlParams = new URLSearchParams(window.location.search);
+  const smilesFromUrl = urlParams.get('smiles');
+
+  // Load a default example after a short delay so first paint is clean
+  setTimeout(() => {
+    input.value = smilesFromUrl || 'CC(=O)Oc1ccccc1C(=O)O';
+  }, 100);
+
+  // --- Integrasi JSME (editor gambar struktur) ---
+  // jsmeOnLoad dipanggil otomatis oleh library JSME setelah selesai bootstrap
+  // (asinkron, bisa beberapa detik karena ini kode GWT lama yang dimuat dari CDN).
+  let jsmeApplet = null;
+  window.jsmeOnLoad = function () {
+    try {
+      // Lebar dihitung dari window.innerWidth (bukan dari container, yang
+      // bisa 0 kalau tab "Gambar Struktur" belum aktif saat ini jalan) —
+      // dijaga antara 280px (muat di layar HP kecil) dan 480px.
+      const w = Math.max(280, Math.min(480, window.innerWidth - 64));
+      const h = Math.round(w * 0.75);
+      jsmeApplet = new JSApplet.JSME('jsme-container', w + 'px', h + 'px', {
+        options: 'oldlook,star'
+      });
+    } catch (e) {
+      console.warn('Gagal menginisialisasi JSME:', e);
+      document.getElementById('jsme-container').innerHTML =
+        '<div class="empty-state">Editor gambar struktur gagal dimuat. Kamu tetap bisa pakai kolom SMILES di atas.</div>';
+    }
+  };
+
+  const jsmeUseBtn = document.getElementById('jsme-use-btn');
+  jsmeUseBtn.addEventListener('click', () => {
+    if (!jsmeApplet) {
+      setStatus('Editor gambar struktur belum siap, tunggu sebentar lalu coba lagi.', 'error');
+      return;
+    }
+    const smiles = jsmeApplet.smiles();
+    if (!smiles) {
+      setStatus('Gambar dulu strukturnya di editor sebelum dipakai.', 'error');
+      return;
+    }
+    input.value = smiles;
+    handleInput();
+  });
+})();
+</script>
+</body>
+</html>

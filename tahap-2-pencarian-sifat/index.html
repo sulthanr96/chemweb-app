@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChemWebApp — Tahap 2: Pencarian Nama & Sifat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1410;
+    --panel: #161c17;
+    --panel-2: #1c231d;
+    --line: #2a332b;
+    --ink: #eef2ea;
+    --muted: #8a998a;
+    --accent: #4fd1c5;
+    --accent-dim: #2f6e68;
+    --amber: #e8b339;
+    --error: #e2685a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity: 0.25;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  header {
+    position: relative;
+    padding: 48px 6vw 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 10px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    color: var(--muted);
+    max-width: 560px;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .stage-nav { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .stage-nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--accent-dim);
+    padding: 6px 12px;
+    border-radius: 999px;
+    transition: all 0.15s ease;
+  }
+  .stage-nav a:hover { background: var(--accent-dim); color: var(--ink); }
+
+  main {
+    padding: 36px 6vw 72px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  #query-input {
+    flex: 1;
+    min-width: 240px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  #query-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.15);
+  }
+  #query-input::placeholder { color: var(--muted); }
+
+  .icon-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 0 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .icon-btn.primary:hover:not(:disabled) { background: #6fe0d5; color: var(--bg); }
+  .icon-btn.small {
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 8px;
+  }
+
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .preset-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+
+  .status-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    min-height: 20px;
+    margin-bottom: 22px;
+    color: var(--muted);
+  }
+  .status-line.error { color: var(--error); }
+  .status-line.ok { color: var(--accent); }
+  .status-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .boot-bar {
+    height: 2px;
+    background: var(--line);
+    overflow: hidden;
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+  .boot-bar-fill {
+    height: 100%;
+    width: 40%;
+    background: var(--accent);
+    animation: boot-slide 1.1s ease-in-out infinite;
+  }
+  .boot-bar[hidden] { display: none; }
+  @keyframes boot-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
+
+  .result-wrap[hidden] { display: none; }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .result-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(26px, 4vw, 40px);
+    letter-spacing: -0.01em;
+  }
+  .result-title .cid-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+  .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 800px) {
+    .result-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .panel-head .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .structure-panel-body {
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    background: #f4f6f2;
+  }
+  .structure-panel-body img { max-width: 100%; height: auto; }
+
+  .descriptor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+  .descriptor-cell {
+    background: var(--panel);
+    padding: 14px 16px;
+  }
+  .descriptor-cell .d-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .descriptor-cell .d-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    word-break: break-word;
+  }
+
+  .smiles-row {
+    padding: 16px 18px;
+    border-top: 1px solid var(--line);
+  }
+  .smiles-row .row-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .smiles-row .row-value-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .smiles-row code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 6px;
+    word-break: break-all;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .synonyms-panel { margin-bottom: 20px; }
+  .synonyms-list {
+    padding: 16px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .synonym-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+
+  .empty-state {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .cache-row {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--panel-2);
+    border: 1px solid var(--accent-dim);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <div class="eyebrow">ChemWebApp — Tahap 2 / 5</div>
+  <h1>Pencarian Nama & Sifat Senyawa</h1>
+  <p>Cari senyawa berdasarkan nama umum (mis. "aspirin" atau "kafein"), ambil data sifatnya langsung dari PubChem: formula, berat molekul, SMILES, dan deskriptor lain.</p>
+  <nav class="stage-nav">
+    <a href="../tahap-1-struktur-2d-3d/index.html">← Tahap 1 — Viewer 2D/3D</a>
+  </nav>
+</header>
+
+<main>
+  <div class="boot-bar" id="boot-bar" hidden><div class="boot-bar-fill"></div></div>
+
+  <form class="input-row" id="search-form">
+    <label for="query-input" class="visually-hidden">Nama senyawa</label>
+    <input id="query-input" type="text" placeholder="Masukkan nama senyawa, mis. aspirin, kafein, glukosa" autocomplete="off" spellcheck="false" />
+    <button type="submit" class="icon-btn primary" id="search-btn">Cari</button>
+  </form>
+
+  <div class="presets" id="presets"></div>
+
+  <div class="status-line" id="status">Ketik nama senyawa lalu tekan Cari, atau pilih salah satu contoh di atas.</div>
+
+  <div class="result-wrap" id="result-wrap" hidden>
+    <div class="result-header">
+      <div>
+        <div class="result-title" id="result-title">–</div>
+        <span class="cid-tag" id="result-cid"></span>
+      </div>
+      <div class="result-actions">
+        <button class="icon-btn small" id="copy-smiles-btn" type="button">⧉ Salin SMILES</button>
+        <a class="icon-btn small" id="open-viewer-link" href="#" target="_self">→ Lihat 2D/3D di Tahap 1</a>
+      </div>
+    </div>
+
+    <div class="result-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="label">Struktur</span>
+          <span class="tag">PubChem</span>
+        </div>
+        <div class="structure-panel-body" id="structure-img-wrap">
+          <div class="empty-state">Gambar struktur akan muncul di sini</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="label">Sifat & Deskriptor</span>
+          <span class="tag" id="cache-tag" style="display:none;">DARI CACHE</span>
+        </div>
+        <div class="descriptor-grid">
+          <div class="descriptor-cell"><span class="d-label">Formula</span><span class="d-value" id="d-formula">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">Berat molekul</span><span class="d-value" id="d-mw">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">XLogP</span><span class="d-value" id="d-xlogp">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">TPSA</span><span class="d-value" id="d-tpsa">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">H-bond donor</span><span class="d-value" id="d-hbd">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">H-bond akseptor</span><span class="d-value" id="d-hba">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">Ikatan dpt diputar</span><span class="d-value" id="d-rotb">–</span></div>
+          <div class="descriptor-cell"><span class="d-label">Massa monoisotopik</span><span class="d-value" id="d-monomass">–</span></div>
+        </div>
+        <div class="smiles-row">
+          <div class="row-label">Nama IUPAC</div>
+          <div class="row-value-line"><code id="d-iupac">–</code></div>
+        </div>
+        <div class="smiles-row">
+          <div class="row-label">Canonical SMILES</div>
+          <div class="row-value-line"><code id="d-smiles">–</code></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel synonyms-panel">
+      <div class="panel-head">
+        <span class="label">Nama lain (sinonim)</span>
+        <span class="tag" id="synonyms-count-tag">–</span>
+      </div>
+      <div class="synonyms-list" id="synonyms-list"></div>
+    </div>
+  </div>
+
+  <div class="cache-row">
+    <span id="cache-info">Hasil pencarian disimpan sementara di browser (cache lokal, 7 hari) supaya nggak bolak-balik hit API PubChem.</span>
+    <button class="icon-btn small" id="clear-cache-btn" type="button">Hapus cache</button>
+  </div>
+</main>
+
+<footer>ChemWebApp · Tahap 2 dari 5 · data sifat senyawa dari PubChem PUG REST</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const form = document.getElementById('search-form');
+  const input = document.getElementById('query-input');
+  const searchBtn = document.getElementById('search-btn');
+  const statusEl = document.getElementById('status');
+  const presetsEl = document.getElementById('presets');
+  const resultWrap = document.getElementById('result-wrap');
+  const resultTitle = document.getElementById('result-title');
+  const resultCid = document.getElementById('result-cid');
+  const structureImgWrap = document.getElementById('structure-img-wrap');
+  const cacheTag = document.getElementById('cache-tag');
+  const openViewerLink = document.getElementById('open-viewer-link');
+  const copySmilesBtn = document.getElementById('copy-smiles-btn');
+  const clearCacheBtn = document.getElementById('clear-cache-btn');
+  const toastEl = document.getElementById('toast');
+  const synonymsList = document.getElementById('synonyms-list');
+  const synonymsCountTag = document.getElementById('synonyms-count-tag');
+
+  const dFormula = document.getElementById('d-formula');
+  const dMw = document.getElementById('d-mw');
+  const dXlogp = document.getElementById('d-xlogp');
+  const dTpsa = document.getElementById('d-tpsa');
+  const dHbd = document.getElementById('d-hbd');
+  const dHba = document.getElementById('d-hba');
+  const dRotb = document.getElementById('d-rotb');
+  const dMonomass = document.getElementById('d-monomass');
+  const dIupac = document.getElementById('d-iupac');
+  const dSmiles = document.getElementById('d-smiles');
+
+  const PRESETS = ['Aspirin', 'Kafein', 'Etanol', 'Benzena', 'Glukosa', 'Ibuprofen', 'Paracetamol'];
+  PRESETS.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.type = 'button';
+    btn.textContent = name;
+    btn.addEventListener('click', () => {
+      input.value = name;
+      runSearch(name);
+    });
+    presetsEl.appendChild(btn);
+  });
+
+  let toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  async function copyText(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`${label} disalin ke clipboard`);
+    } catch (e) {
+      showToast('Gagal menyalin — coba salin manual');
+    }
+  }
+
+  function setStatus(msg, kind, hint) {
+    statusEl.innerHTML = '';
+    statusEl.appendChild(document.createTextNode(msg));
+    statusEl.className = 'status-line' + (kind ? ' ' + kind : '');
+    if (hint) {
+      const hintEl = document.createElement('span');
+      hintEl.className = 'status-hint';
+      hintEl.textContent = hint;
+      statusEl.appendChild(hintEl);
+    }
+  }
+
+  // --- Caching sederhana via localStorage ---
+  // Kunci: nama senyawa (lowercase, trimmed). TTL 7 hari. Ini mengurangi
+  // request berulang ke PubChem untuk pencarian yang sama, dan bikin app
+  // tetap responsif kalau PubChem lagi lambat/rate-limit.
+  const CACHE_PREFIX = 'chemwebapp_t2_cache_';
+  const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+  function cacheGet(key) {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed.savedAt || Date.now() - parsed.savedAt > CACHE_TTL_MS) {
+        localStorage.removeItem(CACHE_PREFIX + key);
+        return null;
+      }
+      return parsed.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function cacheSet(key, data) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ savedAt: Date.now(), data }));
+    } catch (e) {
+      // localStorage penuh/diblokir — bukan fatal, cache cuma optimisasi
+      console.warn('Gagal menyimpan cache:', e);
+    }
+  }
+
+  function clearAllCache() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(CACHE_PREFIX) === 0) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+    showToast(`Cache dihapus (${keys.length} entri)`);
+  }
+  clearCacheBtn.addEventListener('click', clearAllCache);
+
+  const PUG = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
+  const PROPERTY_FIELDS = [
+    'MolecularFormula', 'MolecularWeight', 'IUPACName', 'CanonicalSMILES',
+    'XLogP', 'TPSA', 'HBondDonorCount', 'HBondAcceptorCount',
+    'RotatableBondCount', 'MonoisotopicMass'
+  ].join(',');
+
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = new Error('HTTP ' + res.status);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+
+  async function lookupCompound(name) {
+    const encoded = encodeURIComponent(name);
+    const cidData = await fetchJson(`${PUG}/compound/name/${encoded}/cids/JSON`);
+    const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
+    if (!cid) throw new Error('CID tidak ditemukan');
+
+    const [propData, synData] = await Promise.all([
+      fetchJson(`${PUG}/compound/cid/${cid}/property/${PROPERTY_FIELDS}/JSON`),
+      fetchJson(`${PUG}/compound/cid/${cid}/synonyms/JSON`).catch(() => null)
+    ]);
+
+    const props = propData && propData.PropertyTable && propData.PropertyTable.Properties && propData.PropertyTable.Properties[0];
+    if (!props) throw new Error('Data sifat tidak ditemukan');
+
+    let synonyms = [];
+    try {
+      synonyms = (synData.InformationList.Information[0].Synonym || []).slice(0, 12);
+    } catch (e) {
+      synonyms = [];
+    }
+
+    return { cid, props, synonyms, queriedName: name };
+  }
+
+  let generationToken = 0;
+
+  function renderResult(data) {
+    const { cid, props, synonyms, queriedName } = data;
+
+    resultTitle.textContent = queriedName.replace(/\b\w/g, c => c.toUpperCase());
+    resultCid.textContent = `PubChem CID ${cid}`;
+
+    structureImgWrap.innerHTML = `<img src="${PUG}/compound/cid/${cid}/PNG?record_type=2d&image_size=300x300" alt="Struktur 2D ${queriedName}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;empty-state&quot;>Gambar struktur gagal dimuat</div>'" />`;
+
+    dFormula.innerHTML = (props.MolecularFormula || '–').replace(/(\d+)/g, '<sub>$1</sub>');
+    dMw.textContent = props.MolecularWeight ? `${props.MolecularWeight} g/mol` : '–';
+    dXlogp.textContent = (typeof props.XLogP === 'number') ? props.XLogP : '–';
+    dTpsa.textContent = (typeof props.TPSA === 'number') ? `${props.TPSA} Å²` : '–';
+    dHbd.textContent = (typeof props.HBondDonorCount === 'number') ? props.HBondDonorCount : '–';
+    dHba.textContent = (typeof props.HBondAcceptorCount === 'number') ? props.HBondAcceptorCount : '–';
+    dRotb.textContent = (typeof props.RotatableBondCount === 'number') ? props.RotatableBondCount : '–';
+    dMonomass.textContent = props.MonoisotopicMass ? `${props.MonoisotopicMass} g/mol` : '–';
+    dIupac.textContent = props.IUPACName || '(tidak tersedia)';
+    dSmiles.textContent = props.CanonicalSMILES || '(tidak tersedia)';
+
+    openViewerLink.href = props.CanonicalSMILES
+      ? `../tahap-1-struktur-2d-3d/index.html?smiles=${encodeURIComponent(props.CanonicalSMILES)}`
+      : '../tahap-1-struktur-2d-3d/index.html';
+
+    synonymsList.innerHTML = '';
+    if (synonyms.length) {
+      synonyms.forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'synonym-chip';
+        chip.textContent = s;
+        synonymsList.appendChild(chip);
+      });
+      synonymsCountTag.textContent = `${synonyms.length} nama`;
+    } else {
+      synonymsList.innerHTML = '<div class="empty-state" style="padding:8px 0;">Tidak ada sinonim tercatat</div>';
+      synonymsCountTag.textContent = '0 nama';
+    }
+
+    resultWrap.hidden = false;
+  }
+
+  copySmilesBtn.addEventListener('click', () => {
+    const text = dSmiles.textContent;
+    if (text && text !== '(tidak tersedia)') copyText(text, 'SMILES');
+  });
+
+  async function runSearch(rawQuery) {
+    const query = (rawQuery !== undefined ? rawQuery : input.value).trim();
+    if (!query) {
+      setStatus('Masukkan nama senyawa dulu, ya.', 'error');
+      return;
+    }
+    input.value = query;
+
+    const myToken = ++generationToken;
+    const cacheKey = query.toLowerCase();
+    searchBtn.disabled = true;
+    resultWrap.hidden = true;
+    cacheTag.style.display = 'none';
+
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      setStatus(`Ditemukan: ${query} (dari cache lokal).`, 'ok');
+      renderResult(cached);
+      cacheTag.style.display = '';
+      searchBtn.disabled = false;
+      return;
+    }
+
+    setStatus(`Mencari "${query}" di PubChem…`);
+    try {
+      const data = await lookupCompound(query);
+      if (myToken !== generationToken) return;
+      cacheSet(cacheKey, data);
+      setStatus(`Ditemukan: ${query}.`, 'ok');
+      renderResult(data);
+    } catch (e) {
+      if (myToken !== generationToken) return;
+      console.warn('Pencarian PubChem gagal:', e);
+      if (e.status === 404) {
+        setStatus(`Senyawa "${query}" tidak ditemukan di PubChem.`, 'error', 'Coba periksa ejaan, atau pakai nama IUPAC/nama dagang lain.');
+      } else if (e.status === 503 || e.status === 429) {
+        setStatus('PubChem sedang sibuk (rate-limited).', 'error', 'Tunggu beberapa detik lalu coba lagi.');
+      } else {
+        setStatus('Gagal mengambil data — periksa koneksi internet.', 'error', String(e.message || e));
+      }
+    } finally {
+      if (myToken === generationToken) searchBtn.disabled = false;
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    runSearch();
+  });
+
+  // Terima ?q=... di URL untuk deep-link (mis. dari Tahap 1 atau Tahap 3 nanti)
+  const urlParams = new URLSearchParams(window.location.search);
+  const qFromUrl = urlParams.get('q');
+  if (qFromUrl) {
+    input.value = qFromUrl;
+    runSearch(qFromUrl);
+  }
+})();
+</script>
+</body>
+</html>
