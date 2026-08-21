@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChemWebApp — Tahap 3: Koleksi Senyawa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1410;
+    --panel: #161c17;
+    --panel-2: #1c231d;
+    --line: #2a332b;
+    --ink: #eef2ea;
+    --muted: #8a998a;
+    --accent: #4fd1c5;
+    --accent-dim: #2f6e68;
+    --amber: #e8b339;
+    --error: #e2685a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    padding: 1.5rem 1.5rem 0.5rem;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin: 0 0 0.25rem; }
+  header p { color: var(--muted); margin: 0 0 0.75rem; font-size: 0.9rem; }
+  nav.stage-nav a { color: var(--accent); text-decoration: none; font-size: 0.85rem; }
+  nav.stage-nav a:hover { text-decoration: underline; }
+
+  main { max-width: 980px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+
+  .toolbar {
+    display: flex; gap: 0.6rem; flex-wrap: wrap;
+    margin: 1rem 0 1.25rem;
+  }
+  .toolbar input, .toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .toolbar input[type="search"] { flex: 1; min-width: 180px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .card .thumb {
+    width: 100%; height: 140px;
+    background: var(--panel-2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .card .thumb img, .card .thumb svg { max-width: 100%; max-height: 100%; }
+  .card .thumb.empty { color: var(--muted); font-size: 0.8rem; }
+  .card h3 { margin: 0; font-size: 1rem; font-family: 'Space Grotesk', sans-serif; }
+  .card .formula { color: var(--muted); font-size: 0.85rem; font-family: 'IBM Plex Mono', monospace; }
+  .card .smiles { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); word-break: break-all; }
+  .card .desc-row { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); }
+  .card .desc-row span { background: var(--panel-2); padding: 0.15rem 0.5rem; border-radius: 999px; }
+  .card .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .card .tag-pill { background: var(--accent-dim); color: var(--accent); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }
+  .card .source-badge { align-self: flex-start; font-size: 0.65rem; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 0.1rem 0.45rem; border-radius: 999px; }
+  .card input.name-input, .card input.iupac-input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.85rem;
+  }
+  .card .iupac-input { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+  .card .physrow { font-size: 0.72rem; color: var(--muted); }
+  .card textarea.notes {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: 0.4rem; font-family: inherit; font-size: 0.8rem; resize: vertical; min-height: 40px;
+  }
+  .card input.tags-input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: 0.4rem; font-family: inherit; font-size: 0.8rem;
+  }
+  .card .actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+  .icon-btn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.8rem; cursor: pointer; font-family: inherit;
+  }
+  .icon-btn:hover { border-color: var(--accent-dim); }
+  .icon-btn.danger:hover { border-color: var(--error); color: var(--error); }
+
+  .empty-state { color: var(--muted); text-align: center; padding: 3rem 1rem; }
+  .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--panel-2); border: 1px solid var(--line); padding: 0.6rem 1rem; border-radius: 8px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; font-size: 0.85rem;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1rem 0 2rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Koleksi Senyawa</h1>
+  <p>Senyawa yang sudah kamu simpan dari Tahap 1 &amp; Tahap 2</p>
+  <nav class="stage-nav">
+    <a href="/tahap1">Tahap 1 — Viewer 2D/3D</a> &middot;
+    <a href="/tahap2">Tahap 2 — Pencarian Sifat</a>
+  </nav>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input type="search" id="search-input" placeholder="Cari nama, formula, atau SMILES…" />
+    <select id="tag-filter"><option value="">Semua tag</option></select>
+    <select id="sort-select">
+      <option value="newest">Terbaru dulu</option>
+      <option value="oldest">Terlama dulu</option>
+      <option value="name_asc">Nama A–Z</option>
+      <option value="name_desc">Nama Z–A</option>
+      <option value="mw_asc">Berat molekul ↑</option>
+      <option value="mw_desc">Berat molekul ↓</option>
+    </select>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <div id="empty-state" class="empty-state" hidden>Belum ada senyawa tersimpan.</div>
+  <div id="pagination" class="pagination"></div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>ChemWebApp · Tahap 3 dari 5 · dibangun bertahap sebagai proyek belajar kimia + web</footer>
+
+<script>
+(function () {
+  const gridEl = document.getElementById('grid');
+  const emptyEl = document.getElementById('empty-state');
+  const paginationEl = document.getElementById('pagination');
+  const searchInput = document.getElementById('search-input');
+  const tagFilter = document.getElementById('tag-filter');
+  const sortSelect = document.getElementById('sort-select');
+  const toastEl = document.getElementById('toast');
+
+  let currentPage = 1;
+  let searchDebounce = null;
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  async function loadTags() {
+    try {
+      const res = await fetch('/api/compounds/tags');
+      const tags = await res.json();
+      tagFilter.innerHTML = '<option value="">Semua tag</option>' +
+        tags.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+    } catch (e) { /* diamkan, tag filter opsional */ }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+
+  function renderThumb(item) {
+    if (item.imageType === 'svg' && item.imageData) {
+      return `<div class="thumb">${item.imageData}</div>`;
+    }
+    if (item.imageType === 'png-data' && item.imageData) {
+      return `<div class="thumb"><img src="${item.imageData}" alt="Struktur ${escapeAttr(item.name || item.molecularFormula || '')}" /></div>`;
+    }
+    return `<div class="thumb empty">Tidak ada gambar</div>`;
+  }
+
+  const SOURCE_LABEL = { tahap1: 'Dari Tahap 1', tahap2: 'Dari Tahap 2', manual: 'Manual' };
+
+  function renderCard(item) {
+    const title = item.name || item.iupacName || item.molecularFormula || 'Tanpa nama';
+    const desc = [];
+    if (typeof item.molecularWeight === 'number') desc.push(`MW ${item.molecularWeight.toFixed ? item.molecularWeight.toFixed(2) : item.molecularWeight}`);
+    if (typeof item.logp === 'number') desc.push(`LogP ${item.logp}`);
+    if (typeof item.tpsa === 'number') desc.push(`TPSA ${item.tpsa}`);
+    if (typeof item.hbd === 'number') desc.push(`HBD ${item.hbd}`);
+    if (typeof item.hba === 'number') desc.push(`HBA ${item.hba}`);
+    if (typeof item.rotatableBonds === 'number') desc.push(`Rot.bond ${item.rotatableBonds}`);
+    if (typeof item.monoisotopicMass === 'number') desc.push(`Monoiso ${item.monoisotopicMass.toFixed ? item.monoisotopicMass.toFixed(2) : item.monoisotopicMass}`);
+
+    const physrow = [];
+    if (item.meltingPoint) physrow.push(`Titik leleh: ${item.meltingPoint}`);
+    if (item.boilingPoint) physrow.push(`Titik didih: ${item.boilingPoint}`);
+
+    const sourceLabel = SOURCE_LABEL[item.source] || 'Manual';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      ${renderThumb(item)}
+      <span class="source-badge">${escapeHtml(sourceLabel)}</span>
+      <input class="name-input" type="text" placeholder="Nama senyawa…" value="${escapeAttr(item.name || '')}" />
+      <input class="iupac-input" type="text" placeholder="Nama IUPAC…" value="${escapeAttr(item.iupacName || '')}" />
+      <div class="formula">${escapeHtml(item.molecularFormula || '–')}</div>
+      <div class="smiles">${escapeHtml(item.canonicalSmiles)}</div>
+      <div class="desc-row">${desc.map(d => `<span>${escapeHtml(d)}</span>`).join('')}</div>
+      ${physrow.length ? `<div class="physrow">${physrow.map(p => escapeHtml(p)).join(' · ')}</div>` : ''}
+      <input class="tags-input" type="text" placeholder="tag1, tag2, …" value="${escapeAttr((item.tags || []).join(', '))}" />
+      <textarea class="notes" placeholder="Catatan…">${escapeHtml(item.notes || '')}</textarea>
+      <div class="actions">
+        <button class="icon-btn save-btn" type="button">💾 Simpan perubahan</button>
+        <button class="icon-btn open-btn" type="button">⚛ Buka di Tahap 1</button>
+        <button class="icon-btn danger delete-btn" type="button">🗑 Hapus</button>
+      </div>
+    `;
+
+    const nameInput = card.querySelector('.name-input');
+    const iupacInput = card.querySelector('.iupac-input');
+    const tagsInput = card.querySelector('.tags-input');
+    const notesInput = card.querySelector('.notes');
+    const saveBtn = card.querySelector('.save-btn');
+    const openBtn = card.querySelector('.open-btn');
+    const deleteBtn = card.querySelector('.delete-btn');
+
+    openBtn.addEventListener('click', () => {
+      window.open('/tahap1?smiles=' + encodeURIComponent(item.canonicalSmiles), '_blank');
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      const tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Menyimpan…';
+      try {
+        const res = await fetch(`/api/compounds/${item._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: nameInput.value.trim(),
+            iupacName: iupacInput.value.trim(),
+            tags,
+            notes: notesInput.value,
+          }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        showToast('Perubahan disimpan');
+        loadTags();
+      } catch (e) {
+        showToast('Gagal menyimpan perubahan');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Simpan perubahan';
+      }
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm(`Hapus "${title}" dari koleksi?`)) return;
+      try {
+        const res = await fetch(`/api/compounds/${item._id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        card.remove();
+        showToast('Senyawa dihapus');
+        loadTags();
+      } catch (e) {
+        showToast('Gagal menghapus');
+      }
+    });
+
+    return card;
+  }
+
+  async function loadCompounds(page) {
+    currentPage = page || 1;
+    const params = new URLSearchParams({ page: currentPage, limit: 12, sort: sortSelect.value });
+    if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+    if (tagFilter.value) params.set('tag', tagFilter.value);
+
+    gridEl.innerHTML = '';
+    emptyEl.hidden = true;
+
+    try {
+      const res = await fetch('/api/compounds?' + params.toString());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      if (!data.items.length) {
+        emptyEl.hidden = false;
+        paginationEl.innerHTML = '';
+        return;
+      }
+
+      data.items.forEach(item => gridEl.appendChild(renderCard(item)));
+      renderPagination(data.page, data.pages);
+    } catch (e) {
+      emptyEl.textContent = 'Gagal memuat koleksi. Coba refresh halaman.';
+      emptyEl.hidden = false;
+    }
+  }
+
+  function renderPagination(page, pages) {
+    paginationEl.innerHTML = '';
+    if (pages <= 1) return;
+    for (let i = 1; i <= pages; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'icon-btn';
+      btn.textContent = i;
+      if (i === page) btn.style.borderColor = 'var(--accent)';
+      btn.addEventListener('click', () => loadCompounds(i));
+      paginationEl.appendChild(btn);
+    }
+  }
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => loadCompounds(1), 350);
+  });
+  tagFilter.addEventListener('change', () => loadCompounds(1));
+  sortSelect.addEventListener('change', () => loadCompounds(1));
+
+  loadTags();
+  loadCompounds(1);
+})();
+</script>
+</body>
+</html>

@@ -463,7 +463,7 @@
   <div class="eyebrow">ChemWebApp — Tahap 1 / 5</div>
   <h1>SMILES → Struktur 2D & 3D</h1>
   <p>Masukkan notasi SMILES (atau gambar strukturnya langsung), lihat molekulnya dalam bentuk 2D dan model 3D yang bisa diputar.</p>
-  <nav class="stage-nav"><a href="../tahap-2-pencarian-sifat/index.html">Tahap 2 — Pencarian nama & sifat →</a></nav>
+  <nav class="stage-nav"><a href="/tahap2" id="tahap2-link">Tahap 2 — Pencarian nama & sifat →</a></nav>
 </header>
 
 <main>
@@ -513,6 +513,12 @@
     <div class="descriptor-cell"><span class="d-label">H-bond donor</span><span class="d-value" id="d-hbd">–</span></div>
     <div class="descriptor-cell"><span class="d-label">H-bond akseptor</span><span class="d-value" id="d-hba">–</span></div>
     <div class="descriptor-cell"><span class="d-label">TPSA</span><span class="d-value" id="d-tpsa">–</span></div>
+    <div class="descriptor-cell"><span class="d-label">Ikatan dpt diputar</span><span class="d-value" id="d-rotb">–</span></div>
+    <div class="descriptor-cell"><span class="d-label">Massa monoisotopik</span><span class="d-value" id="d-monomass">–</span></div>
+  </div>
+
+  <div class="canonical-row" id="save-row" hidden>
+    <button class="icon-btn" id="save-collection-btn" type="button">☆ Simpan ke koleksi</button>
   </div>
 
   <div class="panels">
@@ -578,6 +584,9 @@
   const dHbd = document.getElementById('d-hbd');
   const dHba = document.getElementById('d-hba');
   const dTpsa = document.getElementById('d-tpsa');
+  const dRotb = document.getElementById('d-rotb');
+  const dMonomass = document.getElementById('d-monomass');
+  const tahap2Link = document.getElementById('tahap2-link');
   const download2dBtn = document.getElementById('download-2d-btn');
   const download3dBtn = document.getElementById('download-3d-btn');
   const style3dBtn = document.getElementById('style-3d-btn');
@@ -586,6 +595,15 @@
   const tabDraw = document.getElementById('tab-draw');
   const panelText = document.getElementById('input-panel-text');
   const panelDraw = document.getElementById('input-panel-draw');
+  const saveRow = document.getElementById('save-row');
+  const saveCollectionBtn = document.getElementById('save-collection-btn');
+
+  let lastFormula = '';
+  let lastMw = null; // rata-rata (amw) — dipakai sbg molecularWeight
+  let lastMonoMass = null; // exactmw (monoisotopik)
+  let lastRotB = null;
+  let lastAutoName = ''; // hasil best-effort lookup nama dari PubChem via SMILES
+  let nameLookupToken = 0;
 
   let toastTimer = null;
   function showToast(msg) {
@@ -701,7 +719,14 @@
     try {
       const descriptors = JSON.parse(mol.get_descriptors());
       const formula = mol.get_molformula ? mol.get_molformula() : '';
-      const mw = descriptors.exactmw ? descriptors.exactmw.toFixed(2) : '';
+      // amw = average molecular weight (yang biasa disebut "MW" oleh kimiawan);
+      // exactmw = massa monoisotopik. Sebelumnya keduanya tertukar (exactmw dipakai
+      // sebagai "MW"), sekarang dipisah dan ditampilkan sebagai dua hal berbeda.
+      lastFormula = formula || '';
+      lastMw = (typeof descriptors.amw === 'number') ? descriptors.amw : null;
+      lastMonoMass = (typeof descriptors.exactmw === 'number') ? descriptors.exactmw : null;
+      lastRotB = (typeof descriptors.NumRotatableBonds === 'number') ? descriptors.NumRotatableBonds : null;
+      const mw = lastMw !== null ? lastMw.toFixed(2) : '';
       formulaEl.innerHTML = formula
         ? `<span>${formula.replace(/(\d+)/g, '<sub>$1</sub>')}</span><span class="mw">MW ${mw} g/mol</span>`
         : '';
@@ -710,6 +735,8 @@
       dHbd.textContent = (typeof descriptors.NumHBD === 'number') ? descriptors.NumHBD : '–';
       dHba.textContent = (typeof descriptors.NumHBA === 'number') ? descriptors.NumHBA : '–';
       dTpsa.textContent = fmtNum(descriptors.tpsa, 1);
+      dRotb.textContent = (lastRotB !== null) ? lastRotB : '–';
+      dMonomass.textContent = (lastMonoMass !== null) ? lastMonoMass.toFixed(4) : '–';
       descriptorGrid.hidden = false;
 
       let canonical = '';
@@ -717,13 +744,41 @@
       if (canonical) {
         canonicalSmilesEl.textContent = canonical;
         canonicalRow.hidden = false;
+        saveRow.hidden = false;
+        tahap2Link.href = '/tahap2?smiles=' + encodeURIComponent(canonical);
+        lastAutoName = '';
+        tryAutoFetchName(canonical);
       } else {
         canonicalRow.hidden = true;
+        saveRow.hidden = true;
+        tahap2Link.href = '/tahap2';
       }
     } catch (e) {
       formulaEl.innerHTML = '';
       descriptorGrid.hidden = true;
       canonicalRow.hidden = true;
+      saveRow.hidden = true;
+      tahap2Link.href = '/tahap2';
+    }
+  }
+
+  // Best-effort: begitu SMILES valid, coba cari nama IUPAC-nya di PubChem (kalau
+  // strukturnya terdaftar di sana) supaya field "name" tidak kosong saat disimpan
+  // ke koleksi (Tahap 3). Gagal/tidak ketemu = wajar, dibiarkan kosong saja.
+  async function tryAutoFetchName(smiles) {
+    const myToken = ++nameLookupToken;
+    try {
+      const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/'
+        + encodeURIComponent(smiles) + '/property/IUPACName/JSON';
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (myToken !== nameLookupToken) return; // sudah usang, SMILES berubah
+      const name = data && data.PropertyTable && data.PropertyTable.Properties &&
+        data.PropertyTable.Properties[0] && data.PropertyTable.Properties[0].IUPACName;
+      if (name) lastAutoName = name;
+    } catch (e) {
+      // diam-diam gagal — ini memang best-effort, bukan fitur wajib
     }
   }
 
@@ -731,7 +786,15 @@
     formulaEl.innerHTML = '';
     descriptorGrid.hidden = true;
     canonicalRow.hidden = true;
+    saveRow.hidden = true;
     canonicalSmilesEl.textContent = '';
+    tahap2Link.href = '/tahap2';
+    lastFormula = '';
+    lastMw = null;
+    lastMonoMass = null;
+    lastRotB = null;
+    lastAutoName = '';
+    nameLookupToken++;
   }
 
   copySmilesBtn.addEventListener('click', () => {
@@ -756,6 +819,44 @@
 
   download2dBtn.addEventListener('click', () => {
     if (lastSvg) downloadBlob(lastSvg, 'struktur-2d.svg', 'image/svg+xml');
+  });
+
+  saveCollectionBtn.addEventListener('click', async () => {
+    const smiles = canonicalSmilesEl.textContent;
+    if (!smiles) return;
+    saveCollectionBtn.disabled = true;
+    saveCollectionBtn.textContent = 'Menyimpan…';
+    try {
+      const res = await fetch('/api/compounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canonicalSmiles: smiles,
+          name: lastAutoName || '',
+          molecularFormula: lastFormula,
+          molecularWeight: lastMw,
+          monoisotopicMass: lastMonoMass,
+          logp: parseFloat(dLogp.textContent) || null,
+          hbd: parseInt(dHbd.textContent, 10) || null,
+          hba: parseInt(dHba.textContent, 10) || null,
+          tpsa: parseFloat(dTpsa.textContent) || null,
+          rotatableBonds: lastRotB,
+          imageType: lastSvg ? 'svg' : 'none',
+          imageData: lastSvg || '',
+          source: 'tahap1',
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const saved = await res.json();
+      showToast(saved.duplicate ? 'Sudah ada di koleksi — data diperbarui ✓' : 'Tersimpan ke koleksi ✓');
+      saveCollectionBtn.textContent = '✓ Tersimpan';
+    } catch (e) {
+      showToast('Gagal menyimpan ke koleksi');
+      saveCollectionBtn.textContent = '☆ Simpan ke koleksi';
+    } finally {
+      saveCollectionBtn.disabled = false;
+      setTimeout(() => { saveCollectionBtn.textContent = '☆ Simpan ke koleksi'; }, 2500);
+    }
   });
 
   // Catatan implementasi 3D — dua lapis:

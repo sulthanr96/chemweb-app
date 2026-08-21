@@ -431,7 +431,7 @@
   <h1>Pencarian Nama & Sifat Senyawa</h1>
   <p>Cari senyawa berdasarkan nama umum (mis. "aspirin" atau "kafein"), ambil data sifatnya langsung dari PubChem: formula, berat molekul, SMILES, dan deskriptor lain.</p>
   <nav class="stage-nav">
-    <a href="../tahap-1-struktur-2d-3d/index.html">← Tahap 1 — Viewer 2D/3D</a>
+    <a href="/tahap1">← Tahap 1 — Viewer 2D/3D</a>
   </nav>
 </header>
 
@@ -456,6 +456,7 @@
       </div>
       <div class="result-actions">
         <button class="icon-btn small" id="copy-smiles-btn" type="button">⧉ Salin SMILES</button>
+        <button class="icon-btn small" id="save-collection-btn" type="button">☆ Simpan ke koleksi</button>
         <a class="icon-btn small" id="open-viewer-link" href="#" target="_self">→ Lihat 2D/3D di Tahap 1</a>
       </div>
     </div>
@@ -494,6 +495,56 @@
           <div class="row-label">Canonical SMILES</div>
           <div class="row-value-line"><code id="d-smiles">–</code></div>
         </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Identifier Tambahan</span>
+      </div>
+      <div class="smiles-row">
+        <div class="row-label">Isomeric SMILES</div>
+        <div class="row-value-line"><code id="d-isosmiles">–</code></div>
+      </div>
+      <div class="smiles-row">
+        <div class="row-label">InChI</div>
+        <div class="row-value-line"><code id="d-inchi">–</code></div>
+      </div>
+      <div class="smiles-row">
+        <div class="row-label">InChIKey</div>
+        <div class="row-value-line"><code id="d-inchikey">–</code></div>
+      </div>
+      <div class="descriptor-grid">
+        <div class="descriptor-cell"><span class="d-label">Complexity</span><span class="d-value" id="d-complexity">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Muatan (charge)</span><span class="d-value" id="d-charge">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Stereosenter tetap</span><span class="d-value" id="d-stereo-defined">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Stereosenter tak tetap</span><span class="d-value" id="d-stereo-undefined">–</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Sifat Fisik &amp; Kimia (Eksperimental)</span>
+        <span class="tag" id="physprop-tag" style="display:none;">PUBCHEM PUG-VIEW</span>
+      </div>
+      <p class="status-hint" style="margin:0 0 10px;">Data eksperimental — tidak semua senyawa punya catatan lengkap di PubChem.</p>
+      <div class="descriptor-grid" id="physprop-grid">
+        <div class="descriptor-cell"><span class="d-label">Titik leleh</span><span class="d-value" id="d-melting">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Titik didih</span><span class="d-value" id="d-boiling">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Densitas</span><span class="d-value" id="d-density">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Kelarutan</span><span class="d-value" id="d-solubility">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Tekanan uap</span><span class="d-value" id="d-vaporpressure">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Titik nyala</span><span class="d-value" id="d-flashpoint">–</span></div>
+        <div class="descriptor-cell"><span class="d-label">Viskositas</span><span class="d-value" id="d-viscosity">–</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Keselamatan (GHS)</span>
+      </div>
+      <div id="hazards-list">
+        <div class="empty-state" style="padding:8px 0;">–</div>
       </div>
     </div>
 
@@ -545,6 +596,27 @@
   const dMonomass = document.getElementById('d-monomass');
   const dIupac = document.getElementById('d-iupac');
   const dSmiles = document.getElementById('d-smiles');
+  const saveCollectionBtn = document.getElementById('save-collection-btn');
+
+  const dIsoSmiles = document.getElementById('d-isosmiles');
+  const dInchi = document.getElementById('d-inchi');
+  const dInchikey = document.getElementById('d-inchikey');
+  const dComplexity = document.getElementById('d-complexity');
+  const dCharge = document.getElementById('d-charge');
+  const dStereoDefined = document.getElementById('d-stereo-defined');
+  const dStereoUndefined = document.getElementById('d-stereo-undefined');
+
+  const physpropTag = document.getElementById('physprop-tag');
+  const dMelting = document.getElementById('d-melting');
+  const dBoiling = document.getElementById('d-boiling');
+  const dDensity = document.getElementById('d-density');
+  const dSolubility = document.getElementById('d-solubility');
+  const dVaporPressure = document.getElementById('d-vaporpressure');
+  const dFlashPoint = document.getElementById('d-flashpoint');
+  const dViscosity = document.getElementById('d-viscosity');
+  const hazardsList = document.getElementById('hazards-list');
+
+  let lastResult = null;
 
   const PRESETS = ['Aspirin', 'Kafein', 'Etanol', 'Benzena', 'Glukosa', 'Ibuprofen', 'Paracetamol'];
   PRESETS.forEach(name => {
@@ -631,10 +703,17 @@
   clearCacheBtn.addEventListener('click', clearAllCache);
 
   const PUG = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
+  const PUG_VIEW = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view';
+  // Ditambah: identifier standar (InChI/InChIKey/IsomericSMILES) dan deskriptor
+  // struktural lanjut (Complexity, Charge, stereosenter, unit kovalen) yang
+  // sebelumnya tidak pernah diambil sama sekali.
   const PROPERTY_FIELDS = [
-    'MolecularFormula', 'MolecularWeight', 'IUPACName', 'CanonicalSMILES',
+    'MolecularFormula', 'MolecularWeight', 'IUPACName', 'CanonicalSMILES', 'IsomericSMILES',
+    'InChI', 'InChIKey',
     'XLogP', 'TPSA', 'HBondDonorCount', 'HBondAcceptorCount',
-    'RotatableBondCount', 'MonoisotopicMass'
+    'RotatableBondCount', 'MonoisotopicMass',
+    'Complexity', 'Charge', 'CovalentUnitCount',
+    'DefinedAtomStereoCount', 'UndefinedAtomStereoCount'
   ].join(',');
 
   async function fetchJson(url) {
@@ -647,15 +726,91 @@
     return res.json();
   }
 
-  async function lookupCompound(name) {
-    const encoded = encodeURIComponent(name);
-    const cidData = await fetchJson(`${PUG}/compound/name/${encoded}/cids/JSON`);
-    const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
-    if (!cid) throw new Error('CID tidak ditemukan');
+  // PUG-View "heading" mengembalikan sub-pohon Section yang mengandung heading
+  // itu, di mana pun letaknya. Fungsi ini menelusuri sub-pohon tsb dan
+  // mengumpulkan setiap Information beserta TOCHeading terdekatnya (mis.
+  // "Melting Point", "GHS Hazard Statements"), supaya bisa dikelompokkan.
+  async function fetchPugViewHeading(cid, heading) {
+    try {
+      const url = `${PUG_VIEW}/data/compound/${cid}/JSON?heading=${encodeURIComponent(heading)}`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const out = [];
+      function walk(sections, parentHeading) {
+        if (!Array.isArray(sections)) return;
+        for (const sec of sections) {
+          const heading2 = sec.TOCHeading || parentHeading;
+          if (Array.isArray(sec.Information)) {
+            for (const info of sec.Information) {
+              const strs = [];
+              if (info.Value && Array.isArray(info.Value.StringWithMarkup)) {
+                for (const s of info.Value.StringWithMarkup) {
+                  if (s.String) strs.push(s.String);
+                }
+              }
+              if (strs.length) out.push({ heading: (heading2 || '').toLowerCase(), name: info.Name || heading2, text: strs.join('; ') });
+            }
+          }
+          if (Array.isArray(sec.Section)) walk(sec.Section, heading2);
+        }
+      }
+      if (data.Record && Array.isArray(data.Record.Section)) walk(data.Record.Section, null);
+      return out;
+    } catch (e) {
+      return [];
+    }
+  }
 
-    const [propData, synData] = await Promise.all([
+  function truncate(str, max) {
+    if (!str) return str;
+    return str.length > max ? str.slice(0, max - 1) + '…' : str;
+  }
+
+  // Ambil sifat fisik eksperimental (titik leleh/didih, densitas, dst) dari
+  // section "Experimental Properties" — best-effort, banyak senyawa yang datanya
+  // sebagian/kosong, itu wajar dan ditandai "(tidak tersedia)" di UI.
+  async function fetchExperimentalProperties(cid) {
+    const items = await fetchPugViewHeading(cid, 'Experimental Properties');
+    const buckets = { meltingPoint: [], boilingPoint: [], density: [], solubility: [], vaporPressure: [], flashPoint: [], viscosity: [] };
+    for (const item of items) {
+      const h = item.heading;
+      if (h.includes('melting point')) buckets.meltingPoint.push(item.text);
+      else if (h.includes('boiling point')) buckets.boilingPoint.push(item.text);
+      else if (h.includes('vapor pressure')) buckets.vaporPressure.push(item.text);
+      else if (h.includes('flash point')) buckets.flashPoint.push(item.text);
+      else if (h.includes('viscosity')) buckets.viscosity.push(item.text);
+      else if (h.includes('solubility')) buckets.solubility.push(item.text);
+      else if (h === 'density' || h.startsWith('density')) buckets.density.push(item.text);
+    }
+    const result = {};
+    for (const key of Object.keys(buckets)) {
+      result[key] = buckets[key].length ? truncate(buckets[key][0], 200) : '';
+    }
+    return result;
+  }
+
+  // Ambil ringkasan bahaya GHS (bukan SDS lengkap — cukup untuk kesadaran awal).
+  async function fetchHazards(cid) {
+    const items = await fetchPugViewHeading(cid, 'GHS Classification');
+    const hazards = [];
+    for (const item of items) {
+      if (/hazard statement/i.test(item.name || '') || /hazard statement/i.test(item.heading || '')) {
+        item.text.split(';').forEach(part => {
+          const t = part.trim();
+          if (t && !hazards.includes(t)) hazards.push(t);
+        });
+      }
+    }
+    return hazards.slice(0, 8).map(h => truncate(h, 160));
+  }
+
+  async function fetchCompoundDetails(cid, queriedNameOrNull) {
+    const [propData, synData, physProps, hazards] = await Promise.all([
       fetchJson(`${PUG}/compound/cid/${cid}/property/${PROPERTY_FIELDS}/JSON`),
-      fetchJson(`${PUG}/compound/cid/${cid}/synonyms/JSON`).catch(() => null)
+      fetchJson(`${PUG}/compound/cid/${cid}/synonyms/JSON`).catch(() => null),
+      fetchExperimentalProperties(cid).catch(() => ({})),
+      fetchHazards(cid).catch(() => []),
     ]);
 
     const props = propData && propData.PropertyTable && propData.PropertyTable.Properties && propData.PropertyTable.Properties[0];
@@ -668,13 +823,34 @@
       synonyms = [];
     }
 
-    return { cid, props, synonyms, queriedName: name };
+    const queriedName = queriedNameOrNull || props.IUPACName || (synonyms[0] || '') || props.MolecularFormula || 'Senyawa';
+    return { cid, props, synonyms, physProps, hazards, queriedName };
+  }
+
+  async function lookupCompound(name) {
+    const encoded = encodeURIComponent(name);
+    const cidData = await fetchJson(`${PUG}/compound/name/${encoded}/cids/JSON`);
+    const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
+    if (!cid) throw new Error('CID tidak ditemukan');
+    return fetchCompoundDetails(cid, name);
+  }
+
+  // Jalur khusus untuk SMILES (mis. deep-link dari Tahap 1) — TIDAK lewat
+  // endpoint pencarian nama (PubChem akan gagal kalau SMILES diperlakukan
+  // sebagai nama), tapi lewat endpoint SMILES langsung.
+  async function lookupCompoundBySmiles(smiles) {
+    const encoded = encodeURIComponent(smiles);
+    const cidData = await fetchJson(`${PUG}/compound/smiles/${encoded}/cids/JSON`);
+    const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
+    if (!cid) throw new Error('CID tidak ditemukan untuk SMILES ini');
+    return fetchCompoundDetails(cid, null);
   }
 
   let generationToken = 0;
 
   function renderResult(data) {
-    const { cid, props, synonyms, queriedName } = data;
+    const { cid, props, synonyms, physProps, hazards, queriedName } = data;
+    lastResult = data;
 
     resultTitle.textContent = queriedName.replace(/\b\w/g, c => c.toUpperCase());
     resultCid.textContent = `PubChem CID ${cid}`;
@@ -693,8 +869,42 @@
     dSmiles.textContent = props.CanonicalSMILES || '(tidak tersedia)';
 
     openViewerLink.href = props.CanonicalSMILES
-      ? `../tahap-1-struktur-2d-3d/index.html?smiles=${encodeURIComponent(props.CanonicalSMILES)}`
-      : '../tahap-1-struktur-2d-3d/index.html';
+      ? `/tahap1?smiles=${encodeURIComponent(props.CanonicalSMILES)}`
+      : '/tahap1';
+
+    dIsoSmiles.textContent = props.IsomericSMILES || '(tidak tersedia)';
+    dInchi.textContent = props.InChI || '(tidak tersedia)';
+    dInchikey.textContent = props.InChIKey || '(tidak tersedia)';
+    dComplexity.textContent = (typeof props.Complexity === 'number') ? props.Complexity : '–';
+    dCharge.textContent = (typeof props.Charge === 'number') ? props.Charge : '–';
+    dStereoDefined.textContent = (typeof props.DefinedAtomStereoCount === 'number') ? props.DefinedAtomStereoCount : '–';
+    dStereoUndefined.textContent = (typeof props.UndefinedAtomStereoCount === 'number') ? props.UndefinedAtomStereoCount : '–';
+
+    const pp = physProps || {};
+    dMelting.textContent = pp.meltingPoint || '(tidak tersedia)';
+    dBoiling.textContent = pp.boilingPoint || '(tidak tersedia)';
+    dDensity.textContent = pp.density || '(tidak tersedia)';
+    dSolubility.textContent = pp.solubility || '(tidak tersedia)';
+    dVaporPressure.textContent = pp.vaporPressure || '(tidak tersedia)';
+    dFlashPoint.textContent = pp.flashPoint || '(tidak tersedia)';
+    dViscosity.textContent = pp.viscosity || '(tidak tersedia)';
+    physpropTag.style.display = Object.values(pp).some(Boolean) ? '' : 'none';
+
+    hazardsList.innerHTML = '';
+    if (hazards && hazards.length) {
+      const ul = document.createElement('ul');
+      ul.style.margin = '0';
+      ul.style.paddingLeft = '18px';
+      hazards.forEach(h => {
+        const li = document.createElement('li');
+        li.textContent = h;
+        li.style.marginBottom = '4px';
+        ul.appendChild(li);
+      });
+      hazardsList.appendChild(ul);
+    } else {
+      hazardsList.innerHTML = '<div class="empty-state" style="padding:8px 0;">Tidak ada data klasifikasi GHS tercatat di PubChem untuk senyawa ini.</div>';
+    }
 
     synonymsList.innerHTML = '';
     if (synonyms.length) {
@@ -718,6 +928,85 @@
     if (text && text !== '(tidak tersedia)') copyText(text, 'SMILES');
   });
 
+  saveCollectionBtn.addEventListener('click', async () => {
+    if (!lastResult || !lastResult.props || !lastResult.props.CanonicalSMILES) {
+      showToast('Belum ada hasil pencarian untuk disimpan');
+      return;
+    }
+    const { cid, props, queriedName, physProps, hazards } = lastResult;
+    const pp = physProps || {};
+    saveCollectionBtn.disabled = true;
+    saveCollectionBtn.textContent = 'Menyimpan…';
+    try {
+      let imageType = 'none';
+      let imageData = '';
+      if (cid) {
+        try {
+          const imgRes = await fetch(`${PUG}/compound/cid/${cid}/PNG?record_type=2d&image_size=300x300`);
+          const blob = await imgRes.blob();
+          imageData = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          imageType = 'png-data';
+        } catch (imgErr) {
+          imageType = 'none';
+          imageData = '';
+        }
+      }
+
+      const res = await fetch('/api/compounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cid: cid || null,
+          name: queriedName || '',
+          iupacName: props.IUPACName || '',
+          canonicalSmiles: props.CanonicalSMILES,
+          isomericSmiles: props.IsomericSMILES || '',
+          inchi: props.InChI || '',
+          inchikey: props.InChIKey || '',
+          molecularFormula: props.MolecularFormula || '',
+          molecularWeight: props.MolecularWeight || null,
+          logp: (typeof props.XLogP === 'number') ? props.XLogP : null,
+          tpsa: (typeof props.TPSA === 'number') ? props.TPSA : null,
+          hbd: (typeof props.HBondDonorCount === 'number') ? props.HBondDonorCount : null,
+          hba: (typeof props.HBondAcceptorCount === 'number') ? props.HBondAcceptorCount : null,
+          rotatableBonds: (typeof props.RotatableBondCount === 'number') ? props.RotatableBondCount : null,
+          monoisotopicMass: props.MonoisotopicMass || null,
+          complexity: (typeof props.Complexity === 'number') ? props.Complexity : null,
+          charge: (typeof props.Charge === 'number') ? props.Charge : null,
+          covalentUnitCount: (typeof props.CovalentUnitCount === 'number') ? props.CovalentUnitCount : null,
+          definedAtomStereoCount: (typeof props.DefinedAtomStereoCount === 'number') ? props.DefinedAtomStereoCount : null,
+          undefinedAtomStereoCount: (typeof props.UndefinedAtomStereoCount === 'number') ? props.UndefinedAtomStereoCount : null,
+          meltingPoint: pp.meltingPoint || '',
+          boilingPoint: pp.boilingPoint || '',
+          density: pp.density || '',
+          solubility: pp.solubility || '',
+          vaporPressure: pp.vaporPressure || '',
+          flashPoint: pp.flashPoint || '',
+          viscosity: pp.viscosity || '',
+          hazards: hazards || [],
+          imageType,
+          imageData,
+          source: 'tahap2',
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const saved = await res.json();
+      showToast(saved.duplicate ? 'Sudah ada di koleksi — data diperbarui ✓' : 'Tersimpan ke koleksi ✓');
+      saveCollectionBtn.textContent = '✓ Tersimpan';
+    } catch (e) {
+      showToast('Gagal menyimpan ke koleksi');
+      saveCollectionBtn.textContent = '☆ Simpan ke koleksi';
+    } finally {
+      saveCollectionBtn.disabled = false;
+      setTimeout(() => { saveCollectionBtn.textContent = '☆ Simpan ke koleksi'; }, 2500);
+    }
+  });
+
   async function runSearch(rawQuery) {
     const query = (rawQuery !== undefined ? rawQuery : input.value).trim();
     if (!query) {
@@ -727,7 +1016,7 @@
     input.value = query;
 
     const myToken = ++generationToken;
-    const cacheKey = query.toLowerCase();
+    const cacheKey = 'name:' + query.toLowerCase();
     searchBtn.disabled = true;
     resultWrap.hidden = true;
     cacheTag.style.display = 'none';
@@ -763,15 +1052,62 @@
     }
   }
 
+  // Jalur khusus deep-link SMILES (mis. tombol "Sifat lengkap di Tahap 2" dari
+  // Tahap 1). Tidak melalui kotak pencarian nama — SMILES langsung dicocokkan
+  // ke CID via endpoint SMILES PubChem, bukan diperlakukan sebagai nama.
+  async function runSmilesSearch(smiles) {
+    const myToken = ++generationToken;
+    const cacheKey = 'smiles:' + smiles;
+    searchBtn.disabled = true;
+    resultWrap.hidden = true;
+    cacheTag.style.display = 'none';
+
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      setStatus(`Ditemukan struktur dari Tahap 1 (dari cache lokal).`, 'ok');
+      input.value = cached.queriedName || '';
+      renderResult(cached);
+      cacheTag.style.display = '';
+      searchBtn.disabled = false;
+      return;
+    }
+
+    setStatus('Mencari sifat untuk struktur dari Tahap 1…');
+    try {
+      const data = await lookupCompoundBySmiles(smiles);
+      if (myToken !== generationToken) return;
+      cacheSet(cacheKey, data);
+      input.value = data.queriedName || '';
+      setStatus(`Ditemukan: ${data.queriedName}.`, 'ok');
+      renderResult(data);
+    } catch (e) {
+      if (myToken !== generationToken) return;
+      console.warn('Pencarian PubChem (by SMILES) gagal:', e);
+      if (e.status === 404) {
+        setStatus('Struktur ini tidak terdaftar di PubChem.', 'error', 'Wajar untuk struktur yang belum pernah dipublikasikan/didata di PubChem.');
+      } else if (e.status === 503 || e.status === 429) {
+        setStatus('PubChem sedang sibuk (rate-limited).', 'error', 'Tunggu beberapa detik lalu coba lagi.');
+      } else {
+        setStatus('Gagal mengambil data — periksa koneksi internet.', 'error', String(e.message || e));
+      }
+    } finally {
+      if (myToken === generationToken) searchBtn.disabled = false;
+    }
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     runSearch();
   });
 
-  // Terima ?q=... di URL untuk deep-link (mis. dari Tahap 1 atau Tahap 3 nanti)
+  // Terima ?smiles=... (deep-link dari Tahap 1, jalur SMILES langsung) atau
+  // ?q=... (deep-link nama, mis. dari Tahap 3) di URL.
   const urlParams = new URLSearchParams(window.location.search);
+  const smilesFromUrl = urlParams.get('smiles');
   const qFromUrl = urlParams.get('q');
-  if (qFromUrl) {
+  if (smilesFromUrl) {
+    runSmilesSearch(smilesFromUrl);
+  } else if (qFromUrl) {
     input.value = qFromUrl;
     runSearch(qFromUrl);
   }
