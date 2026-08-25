@@ -1,13 +1,15 @@
 // ChemWebApp Service Worker for Offline Assets & Fast PWA Loading
-const CACHE_NAME = 'chemwebapp-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/public/nav-theme.css',
-  '/public/nav-theme.js',
-  '/public/manifest.json'
-];
+const CACHE_NAME = 'chemwebapp-v2';
 
 self.addEventListener('install', (event) => {
+  const scope = self.registration.scope;
+  const ASSETS_TO_CACHE = [
+    scope,
+    scope + 'public/nav-theme.css',
+    scope + 'public/nav-theme.js',
+    scope + 'public/manifest.json'
+  ];
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
@@ -26,17 +28,30 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests and non-API calls
+  // Only cache GET requests and skip API calls
   if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
     return;
   }
+
+  const url = event.request.url;
+  const isCacheable = url.includes(self.location.origin) || 
+                      url.includes('unpkg.com') || 
+                      url.includes('cdnjs.cloudflare.com') || 
+                      url.includes('jsdelivr.net') || 
+                      url.includes('fonts.googleapis.com') || 
+                      url.includes('fonts.gstatic.com') ||
+                      url.includes('3Dmol.org');
+
+  if (!isCacheable) return;
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+        // Cache successful responses (cross-origin opaque responses have status 0, which is also fine to cache)
+        if (!networkResponse || (networkResponse.status !== 200 && networkResponse.status !== 0)) {
           return networkResponse;
         }
         const responseToCache = networkResponse.clone();
@@ -45,7 +60,6 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // Offline fallback
         return cachedResponse;
       });
     })

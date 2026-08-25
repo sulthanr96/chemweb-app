@@ -825,7 +825,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js"></script>
 <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/jsme-editor/jsme-editor.github.io@main/dist/jsme/jsme.nocache.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/partridgejiang/cheminfo-to-web@master/OpenBabel3/OpenBabel-js/bin/openbabel.js"></script>
 <script src="../public/nav-theme.js"></script>
 <script>
 (function () {
@@ -2022,12 +2021,34 @@
     handleInput();
   });
 
+  // Load OpenBabel WebAssembly dynamically in background
+  function loadOpenBabelDynamically() {
+    if (window.OpenBabelModule || obReady) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/gh/partridgejiang/cheminfo-to-web@master/OpenBabel3/OpenBabel-js/bin/openbabel.js';
+    script.onload = () => {
+      if (typeof OpenBabelModule === 'function') {
+        try {
+          const ob = OpenBabelModule();
+          ob.onRuntimeInitialized = function () {
+            ObInstance = ob;
+            obReady = true;
+          };
+        } catch (e) {}
+      }
+    };
+    document.body.appendChild(script);
+  }
+
   // Init RDKit
   window.initRDKitModule().then(rdkit => {
     RDKitModule = rdkit;
     rdkitReady = true;
     bootBar.hidden = true;
     setStatus('Mesin kimia siap — silakan masukkan notasi SMILES.', 'ok');
+
+    // Load OpenBabel dynamically after rendering UI to save initial bandwidth
+    setTimeout(loadOpenBabelDynamically, 800);
 
     const params = new URLSearchParams(window.location.search);
     const querySmiles = params.get('smiles');
