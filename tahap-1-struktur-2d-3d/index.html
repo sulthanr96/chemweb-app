@@ -822,8 +822,27 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <footer>ChemWebApp · Tahap 1 dari 5 · Visualizer SMILES 2D &amp; 3D</footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js"></script>
-<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js" crossorigin="anonymous"></script>
+<script>
+  // Load RDKit dengan fallback CDN
+  (function() {
+    function loadRDKit(urls, idx) {
+      if (idx >= urls.length) {
+        document.getElementById('status').textContent = 'Gagal memuat RDKit dari semua CDN. Periksa koneksi internet.';
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = urls[idx];
+      s.crossOrigin = 'anonymous';
+      s.onerror = function() { loadRDKit(urls, idx + 1); };
+      document.head.appendChild(s);
+    }
+    loadRDKit([
+      'https://cdn.jsdelivr.net/npm/@rdkit/rdkit@2024.3.5/dist/RDKit_minimal.js',
+      'https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js'
+    ], 0);
+  })();
+</script>
 <script src="https://cdn.jsdelivr.net/gh/jsme-editor/jsme-editor.github.io@main/dist/jsme/jsme.nocache.js"></script>
 <script src="../public/nav-theme.js"></script>
 <script>
@@ -2040,27 +2059,39 @@
     document.body.appendChild(script);
   }
 
-  // Init RDKit
-  window.initRDKitModule().then(rdkit => {
-    RDKitModule = rdkit;
-    rdkitReady = true;
-    bootBar.hidden = true;
-    setStatus('Mesin kimia siap — silakan masukkan notasi SMILES.', 'ok');
-
-    // Load OpenBabel dynamically after rendering UI to save initial bandwidth
-    setTimeout(loadOpenBabelDynamically, 800);
-
-    const params = new URLSearchParams(window.location.search);
-    const querySmiles = params.get('smiles');
-    if (querySmiles) {
-      input.value = querySmiles;
-      handleInput();
+  // Init RDKit — tunggu hingga initRDKitModule tersedia (dimuat dinamis)
+  function waitForRDKit(attempts) {
+    if (attempts <= 0) {
+      bootBar.hidden = true;
+      setStatus('Gagal memuat RDKit (WebAssembly) dari CDN.', 'error', 'Periksa koneksi internet lalu coba refresh halaman.');
+      return;
     }
-  }).catch(err => {
-    console.error('Gagal memuat RDKit:', err);
-    bootBar.hidden = true;
-    setStatus('Gagal memuat RDKit (WebAssembly) dari CDN.', 'error', 'Periksa koneksi internet lalu coba refresh halaman.');
-  });
+    if (typeof window.initRDKitModule === 'function') {
+      window.initRDKitModule().then(rdkit => {
+        RDKitModule = rdkit;
+        rdkitReady = true;
+        bootBar.hidden = true;
+        setStatus('Mesin kimia siap — silakan masukkan notasi SMILES.', 'ok');
+
+        // Load OpenBabel dynamically after rendering UI to save initial bandwidth
+        setTimeout(loadOpenBabelDynamically, 800);
+
+        const params = new URLSearchParams(window.location.search);
+        const querySmiles = params.get('smiles');
+        if (querySmiles) {
+          input.value = querySmiles;
+          handleInput();
+        }
+      }).catch(err => {
+        console.error('Gagal memuat RDKit:', err);
+        bootBar.hidden = true;
+        setStatus('Gagal memuat RDKit (WebAssembly) dari CDN.', 'error', 'Periksa koneksi internet lalu coba refresh halaman.');
+      });
+    } else {
+      setTimeout(() => waitForRDKit(attempts - 1), 300);
+    }
+  }
+  waitForRDKit(100); // tunggu maksimal 30 detik (100 x 300ms)
 })();
 </script>
 </body>
