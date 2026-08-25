@@ -4,6 +4,11 @@
  */
 
 (function () {
+  // Detection of static contexts (GitHub Pages, file protocol, etc.)
+  const isStatic = window.location.protocol === 'file:' || 
+                   window.location.hostname.endsWith('github.io') ||
+                   window.location.pathname.includes('/tahap-');
+
   // 1. Theme Management
   const THEME_KEY = 'chemwebapp_theme';
   
@@ -32,61 +37,266 @@
   // Apply theme immediately on load
   applyTheme(getPreferredTheme());
 
-  // Register Service Worker for PWA
-  if ('serviceWorker' in navigator) {
+  // Register Service Worker dynamically based on path structure
+  if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/public/sw.js').catch(() => {});
+      let swPath = '/public/sw.js';
+      if (isStatic) {
+        const match = window.location.pathname.match(/^\/([^\/]+)\//);
+        const repoName = match ? match[1] : '';
+        swPath = repoName ? `/${repoName}/public/sw.js` : 'public/sw.js';
+      }
+      navigator.serviceWorker.register(swPath).catch(() => {});
     });
   }
   if (!document.querySelector('link[rel="manifest"]')) {
     const manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
-    manifestLink.href = '/public/manifest.json';
+    manifestLink.href = isStatic ? '../public/manifest.json' : '/public/manifest.json';
     document.head.appendChild(manifestLink);
   }
+
+  // LocalStorage Database Mock (Offline & Static Site Database Fallback)
+  const LS_DB_KEY = 'chemwebapp_local_compounds';
+  
+  function getLocalCompounds() {
+    try {
+      const raw = localStorage.getItem(LS_DB_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) {
+      return [];
+    }
+  }
+  
+  function saveLocalCompounds(list) {
+    try {
+      localStorage.setItem(LS_DB_KEY, JSON.stringify(list));
+    } catch(e) {}
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function mockApiHandler(urlStr, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+    const body = options.body ? JSON.parse(options.body) : null;
+    let compounds = getLocalCompounds();
+    
+    const jsonResponse = (data, status = 200) => {
+      return new Response(JSON.stringify(data), {
+        status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    };
+    
+    if (urlStr.includes('/tags')) {
+      const tagsSet = new Set();
+      compounds.forEach(c => {
+        if (c.tags) c.tags.forEach(t => tagsSet.add(t));
+      });
+      return jsonResponse(Array.from(tagsSet));
+    }
+    
+    if (urlStr.includes('/export/all')) {
+      return jsonResponse(compounds);
+    }
+    
+    if (urlStr.includes('/batch')) {
+      if (body && body.compounds) {
+        body.compounds.forEach(c => {
+          c._id = 'local_' + Math.random().toString(36).substr(2, 9);
+          c.createdAt = new Date().toISOString();
+          compounds.unshift(c);
+        });
+        saveLocalCompounds(compounds);
+        return jsonResponse({ success: true, count: body.compounds.length });
+      }
+      return jsonResponse({ error: 'Invalid batch body' }, 400);
+    }
+    
+    const matchId = urlStr.match(/\/api\/compounds\/([a-zA-Z0-9_-]+)$/);
+    if (matchId) {
+      const id = matchId[1];
+      if (method === 'PUT') {
+        const idx = compounds.findIndex(c => c._id === id);
+        if (idx !== -1) {
+          compounds[idx] = { ...compounds[idx], ...body, updatedAt: new Date().toISOString() };
+          saveLocalCompounds(compounds);
+          return jsonResponse(compounds[idx]);
+        }
+        return jsonResponse({ error: 'Not found' }, 404);
+      }
+      if (method === 'DELETE') {
+        compounds = compounds.filter(c => c._id !== id);
+        saveLocalCompounds(compounds);
+        return jsonResponse({ message: 'Deleted successfully' });
+      }
+    }
+    
+    if (method === 'POST') {
+      const newCompound = {
+        _id: 'local_' + Math.random().toString(36).substr(2, 9),
+        name: body.name || 'Senyawa Baru',
+        canonicalSmiles: body.canonicalSmiles,
+        molecularFormula: body.molecularFormula || '',
+        molecularWeight: body.molecularWeight || 0,
+        logp: body.logp || 0,
+        tpsa: body.tpsa || 0,
+        tags: body.tags || [],
+        notes: body.notes || '',
+        source: body.source || 'manual',
+        createdAt: new Date().toISOString()
+      };
+      compounds.unshift(newCompound);
+      saveLocalCompounds(compounds);
+      return jsonResponse(newCompound);
+    }
+    
+    let filtered = [...compounds];
+    const urlObj = new URL(urlStr, window.location.origin);
+    const search = urlObj.searchParams.get('search');
+    const tag = urlObj.searchParams.get('tag');
+    const sort = urlObj.searchParams.get('sort') || 'newest';
+    const filter = urlObj.searchParams.get('filter');
+    
+    if (search) {
+      const sLower = search.toLowerCase();
+      filtered = filtered.filter(c => 
+        (c.name || '').toLowerCase().includes(sLower) || 
+        (c.canonicalSmiles || '').toLowerCase().includes(sLower) ||
+        (c.molecularFormula || '').toLowerCase().includes(sLower)
+      );
+    }
+    
+    if (tag) {
+      filtered = filtered.filter(c => c.tags && c.tags.includes(tag));
+    }
+    
+    if (filter === 'lipinski') {
+      filtered = filtered.filter(c => (c.molecularWeight || 0) <= 500 && (c.logp || 0) <= 5);
+    } else if (filter === 'lead') {
+      filtered = filtered.filter(c => (c.molecularWeight || 0) <= 350 && (c.logp || 0) <= 3);
+    } else if (filter === 'ruleof3') {
+      filtered = filtered.filter(c => (c.molecularWeight || 0) <= 300);
+    }
+    
+    if (sort === 'newest') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sort === 'oldest') {
+      filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (sort === 'name_asc') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sort === 'name_desc') {
+      filtered.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    } else if (sort === 'mw_asc') {
+      filtered.sort((a, b) => (a.molecularWeight || 0) - (b.molecularWeight || 0));
+    } else if (sort === 'mw_desc') {
+      filtered.sort((a, b) => (b.molecularWeight || 0) - (a.molecularWeight || 0));
+    }
+    
+    const page = parseInt(urlObj.searchParams.get('page')) || 1;
+    const limit = parseInt(urlObj.searchParams.get('limit')) || 6;
+    const startIndex = (page - 1) * limit;
+    const paginated = filtered.slice(startIndex, startIndex + limit);
+    
+    return jsonResponse({
+      compounds: paginated,
+      total: filtered.length,
+      page,
+      pages: Math.ceil(filtered.length / limit)
+    });
+  }
+
+  // Override window.fetch for LocalStorage API fallback
+  const originalFetch = window.fetch;
+  window.fetch = async function (url, options) {
+    const urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
+    
+    if (isStatic && (urlStr.includes('/api/compounds') || urlStr.includes('api/compounds'))) {
+      return mockApiHandler(urlStr, options);
+    }
+    
+    try {
+      return await originalFetch(url, options);
+    } catch (err) {
+      if (urlStr.includes('/api/compounds') || urlStr.includes('api/compounds')) {
+        console.warn('Database server offline. Menggunakan penyimpanan lokal.');
+        return mockApiHandler(urlStr, options);
+      }
+      throw err;
+    }
+  };
 
   // 2. Unified Navbar Component
   function mountChemNavbar(activeStage) {
     const header = document.querySelector('header');
     if (!header) return;
 
+    function resolveUrl(stageNum) {
+      if (isStatic) {
+        const folders = {
+          1: 'tahap-1-struktur-2d-3d',
+          2: 'tahap-2-pencarian-sifat',
+          3: 'tahap-3-database-koleksi',
+          4: 'tahap-4-analisis-komparasi',
+          5: 'tahap-5-lab-reaksi-sintesis',
+          6: 'tahap-6-docking-toksikologi'
+        };
+        const isSub = window.location.pathname.includes('/tahap');
+        const prefix = isSub ? '../' : '';
+        return `${prefix}${folders[stageNum]}/index.html`;
+      } else {
+        return `/tahap${stageNum}`;
+      }
+    }
+
+    function resolveHomeUrl() {
+      if (isStatic) {
+        const isSub = window.location.pathname.includes('/tahap');
+        return isSub ? '../index.html' : 'index.html';
+      } else {
+        return '/';
+      }
+    }
+
     const wrapper = document.createElement('div');
     wrapper.className = 'chem-navbar-wrapper';
     wrapper.innerHTML = `
       <nav class="chem-navbar" aria-label="Navigasi Utama">
-        <a href="/" class="chem-brand">
+        <a href="${resolveHomeUrl()}" class="chem-brand">
           <span>🧪</span> ChemWebApp
           <span class="chem-brand-badge">PRO</span>
         </a>
         <button class="chem-mobile-toggle" aria-label="Menu" type="button">☰</button>
         <ul class="chem-nav-links" id="chem-nav-menu">
           <li class="chem-nav-item">
-            <a href="/tahap1" class="${activeStage === 1 ? 'active' : ''}">
+            <a href="${resolveUrl(1)}" class="${activeStage === 1 ? 'active' : ''}">
               <span>🔬</span> Tahap 1: 2D/3D Viewer
             </a>
           </li>
           <li class="chem-nav-item">
-            <a href="/tahap2" class="${activeStage === 2 ? 'active' : ''}">
+            <a href="${resolveUrl(2)}" class="${activeStage === 2 ? 'active' : ''}">
               <span>🔍</span> Tahap 2: Cari Sifat
             </a>
           </li>
           <li class="chem-nav-item">
-            <a href="/tahap3" class="${activeStage === 3 ? 'active' : ''}">
+            <a href="${resolveUrl(3)}" class="${activeStage === 3 ? 'active' : ''}">
               <span>📚</span> Tahap 3: Koleksi
             </a>
           </li>
           <li class="chem-nav-item">
-            <a href="/tahap4" class="${activeStage === 4 ? 'active' : ''}">
+            <a href="${resolveUrl(4)}" class="${activeStage === 4 ? 'active' : ''}">
               <span>⚖️</span> Tahap 4: Komparasi
             </a>
           </li>
           <li class="chem-nav-item">
-            <a href="/tahap5" class="${activeStage === 5 ? 'active' : ''}">
+            <a href="${resolveUrl(5)}" class="${activeStage === 5 ? 'active' : ''}">
               <span>⚗️</span> Tahap 5: Lab Reaksi
             </a>
           </li>
           <li class="chem-nav-item">
-            <a href="/tahap6" class="${activeStage === 6 ? 'active' : ''}">
+            <a href="${resolveUrl(6)}" class="${activeStage === 6 ? 'active' : ''}">
               <span>🧬</span> Tahap 6: Docking &amp; ADMET
             </a>
           </li>
@@ -1414,14 +1624,33 @@
 
     const sections = [];
 
+    const folders = {
+      1: 'tahap-1-struktur-2d-3d',
+      2: 'tahap-2-pencarian-sifat',
+      3: 'tahap-3-database-koleksi',
+      4: 'tahap-4-analisis-komparasi',
+      5: 'tahap-5-lab-reaksi-sintesis',
+      6: 'tahap-6-docking-toksikologi'
+    };
+    const isSub = window.location.pathname.includes('/tahap');
+    const prefix = isSub ? '../' : '';
+
+    function getDynamicLink(stageNum, queryStr = '') {
+      if (isStatic) {
+        return `${prefix}${folders[stageNum]}/index.html${queryStr}`;
+      } else {
+        return `/tahap${stageNum}${queryStr}`;
+      }
+    }
+
     // Stage Navigation
     const stages = [
-      { title: 'Tahap 1: Studio Molekul 2D/3D & Spektroskopi', sub: 'Viewer struktur, kalkulasi deskriptor, MMFF94, MEP & FTIR/NMR sonifikasi', url: '/tahap1', badge: 'Modul 1' },
-      { title: 'Tahap 2: Eksplorasi Sifat, GHS & PubChem', sub: 'Pencarian universal, NFPA 704 fire diamond, kelarutan Delaney ESOL & BCS', url: '/tahap2', badge: 'Modul 2' },
-      { title: 'Tahap 3: Database Koleksi & Manajemen', sub: 'Koleksi senyawa, scatterplot MW vs LogP, filter kaidah Lipinski/Rule of 3', url: '/tahap3', badge: 'Modul 3' },
-      { title: 'Tahap 4: Komparasi Senyawa & Tanimoto', sub: 'Analisis kemiripan topologi RDKit, rekomendasi bioisosterisme & AI Mutator', url: '/tahap4', badge: 'Modul 4' },
-      { title: 'Tahap 5: Lab Reaksi & Desain Sintesis', sub: 'Simulasi esterifikasi, amida, reduksi, retrosintesis & metrik Green Chemistry', url: '/tahap5', badge: 'Modul 5' },
-      { title: 'Tahap 6: Studio Docking 3D & Farmakokinetika', sub: 'Binding pocket PDB, toksisitas ADMET, HPLC/TLC & kurva kadar plasma PK', url: '/tahap6', badge: 'Modul 6' }
+      { title: 'Tahap 1: Studio Molekul 2D/3D & Spektroskopi', sub: 'Viewer struktur, kalkulasi deskriptor, MMFF94, MEP & FTIR/NMR sonifikasi', url: getDynamicLink(1), badge: 'Modul 1' },
+      { title: 'Tahap 2: Eksplorasi Sifat, GHS & PubChem', sub: 'Pencarian universal, NFPA 704 fire diamond, kelarutan Delaney ESOL & BCS', url: getDynamicLink(2), badge: 'Modul 2' },
+      { title: 'Tahap 3: Database Koleksi & Manajemen', sub: 'Koleksi senyawa, scatterplot MW vs LogP, filter kaidah Lipinski/Rule of 3', url: getDynamicLink(3), badge: 'Modul 3' },
+      { title: 'Tahap 4: Komparasi Senyawa & Tanimoto', sub: 'Analisis kemiripan topologi RDKit, rekomendasi bioisosterisme & AI Mutator', url: getDynamicLink(4), badge: 'Modul 4' },
+      { title: 'Tahap 5: Lab Reaksi & Desain Sintesis', sub: 'Simulasi esterifikasi, amida, reduksi, retrosintesis & metrik Green Chemistry', url: getDynamicLink(5), badge: 'Modul 5' },
+      { title: 'Tahap 6: Studio Docking 3D & Farmakokinetika', sub: 'Binding pocket PDB, toksisitas ADMET, HPLC/TLC & kurva kadar plasma PK', url: getDynamicLink(6), badge: 'Modul 6' }
     ];
 
     const matchedStages = stages.filter(s => !q || s.title.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q));
@@ -1443,7 +1672,7 @@
         title: d.name,
         sub: `${d.class} · ${d.formula} · ${d.smiles}`,
         badge: 'Muat di Tahap 1',
-        action: () => { window.location.href = `/tahap1?smiles=${encodeURIComponent(d.smiles)}`; }
+        action: () => { window.location.href = getDynamicLink(1, `?smiles=${encodeURIComponent(d.smiles)}`); }
       }))});
     }
 
@@ -1503,6 +1732,25 @@
   function renderSendToHub(smiles, containerEl, currentStage = 1) {
     if (!containerEl || !smiles) return;
 
+    const folders = {
+      1: 'tahap-1-struktur-2d-3d',
+      2: 'tahap-2-pencarian-sifat',
+      3: 'tahap-3-database-koleksi',
+      4: 'tahap-4-analisis-komparasi',
+      5: 'tahap-5-lab-reaksi-sintesis',
+      6: 'tahap-6-docking-toksikologi'
+    };
+    const isSub = window.location.pathname.includes('/tahap');
+    const prefix = isSub ? '../' : '';
+
+    function getDynamicLink(stageNum, queryStr = '') {
+      if (isStatic) {
+        return `${prefix}${folders[stageNum]}/index.html${queryStr}`;
+      } else {
+        return `/tahap${stageNum}${queryStr}`;
+      }
+    }
+
     const encodedSmi = encodeURIComponent(smiles);
     const wrap = document.createElement('div');
     wrap.className = 'send-to-dropdown';
@@ -1511,22 +1759,22 @@
         🚀 Kirim ke Tahap Lain ▾
       </button>
       <div class="send-to-content">
-        <a class="send-to-item" href="/tahap1?smiles=${encodedSmi}">
+        <a class="send-to-item" href="${getDynamicLink(1, `?smiles=${encodedSmi}`)}">
           <span>🔬</span> Tahap 1: Studio 2D/3D &amp; Spektroskopi
         </a>
-        <a class="send-to-item" href="/tahap2?smiles=${encodedSmi}">
+        <a class="send-to-item" href="${getDynamicLink(2, `?smiles=${encodedSmi}`)}">
           <span>🔍</span> Tahap 2: Cek Sifat, GHS &amp; PubChem
         </a>
-        <a class="send-to-item" href="/tahap4?smilesA=${encodedSmi}">
+        <a class="send-to-item" href="${getDynamicLink(4, `?smilesA=${encodedSmi}`)}">
           <span>⚖️</span> Tahap 4: Komparasi (sebagai Molekul A)
         </a>
-        <a class="send-to-item" href="/tahap4?smilesB=${encodedSmi}">
+        <a class="send-to-item" href="${getDynamicLink(4, `?smilesB=${encodedSmi}`)}">
           <span>⚖️</span> Tahap 4: Komparasi (sebagai Molekul B)
         </a>
-        <a class="send-to-item" href="/tahap5?smilesA=${encodedSmi}">
+        <a class="send-to-item" href="${getDynamicLink(5, `?smilesA=${encodedSmi}`)}">
           <span>⚗️</span> Tahap 5: Lab Reaksi (sebagai Reaktan A)
         </a>
-        <a class="send-to-item" href="/tahap6">
+        <a class="send-to-item" href="${getDynamicLink(6)}">
           <span>🧬</span> Tahap 6: Studio Docking &amp; ADMET
         </a>
       </div>
