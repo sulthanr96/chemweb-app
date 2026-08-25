@@ -3,22 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ChemWebApp — Tahap 3: Koleksi Senyawa</title>
+<title>ChemWebApp — Tahap 3: Koleksi Database Senyawa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/nav-theme.css">
 <style>
-  :root {
-    --bg: #0f1410;
-    --panel: #161c17;
-    --panel-2: #1c231d;
-    --line: #2a332b;
-    --ink: #eef2ea;
-    --muted: #8a998a;
-    --accent: #4fd1c5;
-    --accent-dim: #2f6e68;
-    --amber: #e8b339;
-    --error: #e2685a;
-  }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -28,108 +17,194 @@
     min-height: 100vh;
   }
   header {
-    padding: 1.5rem 1.5rem 0.5rem;
-    max-width: 980px;
+    padding: 2.5rem 1.5rem 1rem;
+    max-width: 1200px;
     margin: 0 auto;
   }
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin: 0 0 0.25rem; }
-  header p { color: var(--muted); margin: 0 0 0.75rem; font-size: 0.9rem; }
-  nav.stage-nav a { color: var(--accent); text-decoration: none; font-size: 0.85rem; }
-  nav.stage-nav a:hover { text-decoration: underline; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px, 3.5vw, 36px); margin: 0 0 0.5rem; }
+  header p { color: var(--muted); margin: 0 0 0.75rem; font-size: 0.95rem; line-height: 1.5; }
 
-  main { max-width: 980px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  main { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 4rem; }
 
   .toolbar {
-    display: flex; gap: 0.6rem; flex-wrap: wrap;
-    margin: 1rem 0 1.25rem;
+    display: flex; gap: 0.75rem; flex-wrap: wrap;
+    align-items: center;
+    margin: 1.5rem 0 1.75rem;
+    background: var(--panel);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
   }
   .toolbar input, .toolbar select {
-    background: var(--panel);
+    background: var(--panel-2);
     border: 1px solid var(--line);
     color: var(--ink);
     border-radius: 8px;
-    padding: 0.55rem 0.75rem;
+    padding: 0.6rem 0.85rem;
     font-family: inherit;
     font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s ease;
   }
-  .toolbar input[type="search"] { flex: 1; min-width: 180px; }
+  .toolbar input:focus, .toolbar select:focus {
+    border-color: var(--accent);
+  }
+  .toolbar input[type="search"] { flex: 1; min-width: 220px; }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1.25rem;
   }
   .card {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 1rem;
-    display: flex; flex-direction: column; gap: 0.5rem;
+    border-radius: 14px;
+    padding: 1.1rem;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .card:hover {
+    border-color: var(--accent-dim);
   }
   .card .thumb {
-    width: 100%; height: 140px;
+    width: 100%; height: 160px;
     background: var(--panel-2);
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
+    padding: 8px;
   }
-  .card .thumb img, .card .thumb svg { max-width: 100%; max-height: 100%; }
-  .card .thumb.empty { color: var(--muted); font-size: 0.8rem; }
-  .card h3 { margin: 0; font-size: 1rem; font-family: 'Space Grotesk', sans-serif; }
-  .card .formula { color: var(--muted); font-size: 0.85rem; font-family: 'IBM Plex Mono', monospace; }
-  .card .smiles { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); word-break: break-all; }
-  .card .desc-row { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); }
-  .card .desc-row span { background: var(--panel-2); padding: 0.15rem 0.5rem; border-radius: 999px; }
-  .card .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-  .card .tag-pill { background: var(--accent-dim); color: var(--accent); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }
-  .card .source-badge { align-self: flex-start; font-size: 0.65rem; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 0.1rem 0.45rem; border-radius: 999px; }
+  .card .thumb img, .card .thumb svg { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .card .thumb.empty { color: var(--muted); font-size: 0.8rem; font-family: 'IBM Plex Mono', monospace; }
+  
+  .card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .card .source-badge { font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 0.15rem 0.5rem; border-radius: 999px; }
+  .card .lipinski-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .card .lipinski-badge.pass { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
+  .card .lipinski-badge.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .card .lipinski-badge.fail { background: var(--error-dim); color: var(--error); border: 1px solid var(--error); }
+
   .card input.name-input, .card input.iupac-input {
     width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 6px; padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.85rem;
+    border-radius: 8px; padding: 0.45rem 0.65rem; font-family: inherit; font-size: 0.9rem;
   }
+  .card .name-input { font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
   .card .iupac-input { font-size: 0.75rem; color: var(--muted); font-style: italic; }
-  .card .physrow { font-size: 0.72rem; color: var(--muted); }
+  
+  .card .formula { color: var(--accent); font-size: 0.88rem; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .card .smiles { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); word-break: break-all; background: var(--panel-2); padding: 4px 8px; border-radius: 6px; }
+  .card .desc-row { display: flex; gap: 0.4rem; flex-wrap: wrap; font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+  .card .desc-row span { background: var(--panel-2); border: 1px solid var(--line); padding: 0.2rem 0.5rem; border-radius: 6px; }
+  .card .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .card .tag-pill { background: var(--accent-dim); color: var(--accent); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; font-family: 'IBM Plex Mono', monospace; }
+  
+  .card .physrow { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
   .card textarea.notes {
     width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 6px; padding: 0.4rem; font-family: inherit; font-size: 0.8rem; resize: vertical; min-height: 40px;
+    border-radius: 8px; padding: 0.5rem; font-family: inherit; font-size: 0.82rem; resize: vertical; min-height: 45px;
   }
   .card input.tags-input {
     width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 6px; padding: 0.4rem; font-family: inherit; font-size: 0.8rem;
+    border-radius: 8px; padding: 0.45rem 0.6rem; font-family: inherit; font-size: 0.8rem;
   }
-  .card .actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+  .card .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.3rem; }
+  
   .icon-btn {
     background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.8rem; cursor: pointer; font-family: inherit;
+    border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.82rem; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.15s ease;
   }
-  .icon-btn:hover { border-color: var(--accent-dim); }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .icon-btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .icon-btn.primary:hover { background: var(--accent-hover); color: var(--bg); }
   .icon-btn.danger:hover { border-color: var(--error); color: var(--error); }
+  .icon-btn.small { font-size: 0.75rem; padding: 0.35rem 0.55rem; }
 
-  .empty-state { color: var(--muted); text-align: center; padding: 3rem 1rem; }
-  .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .empty-state { color: var(--muted); text-align: center; padding: 4rem 1rem; font-family: 'IBM Plex Mono', monospace; }
+  .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; }
   .toast {
     position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(10px);
-    background: var(--panel-2); border: 1px solid var(--line); padding: 0.6rem 1rem; border-radius: 8px;
-    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; font-size: 0.85rem;
+    background: var(--panel-2); border: 1px solid var(--accent-dim); padding: 0.65rem 1.2rem; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; font-size: 0.85rem; font-family: 'IBM Plex Mono', monospace;
+    z-index: 3000;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1rem 0 2rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; font-family: 'IBM Plex Mono', monospace; padding: 2rem 0; border-top: 1px solid var(--line); }
+
+  /* Dropdown Button Container */
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-content {
+    display: none; position: absolute; right: 0; top: 100%; margin-top: 4px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: var(--shadow); z-index: 100; min-width: 170px; padding: 6px;
+  }
+  .dropdown.open .dropdown-content { display: block; }
+  .dropdown-item {
+    display: block; width: 100%; text-align: left; padding: 8px 12px;
+    border: none; background: transparent; color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; border-radius: 6px; cursor: pointer;
+  }
+  .dropdown-item:hover { background: var(--panel-2); color: var(--accent); }
 </style>
 </head>
 <body>
+<div class="bg-grid"></div>
+
 <header>
-  <h1>Koleksi Senyawa</h1>
-  <p>Senyawa yang sudah kamu simpan dari Tahap 1 &amp; Tahap 2</p>
-  <nav class="stage-nav">
-    <a href="/tahap1">Tahap 1 — Viewer 2D/3D</a> &middot;
-    <a href="/tahap2">Tahap 2 — Pencarian Sifat</a>
-  </nav>
+  <div class="eyebrow">ChemWebApp — Tahap 3 / 5</div>
+  <h1>Koleksi Database Senyawa Pribadi</h1>
+  <p>Kelola senyawa yang tersimpan dari Tahap 1 (SMILES Viewer) dan Tahap 2 (PubChem Search), edit catatan, filter tag, evaluasi drug-likeness, serta ekspor/impor koleksi secara batch.</p>
 </header>
 
 <main>
   <div class="toolbar">
-    <input type="search" id="search-input" placeholder="Cari nama, formula, atau SMILES…" />
+    <input type="search" id="search-input" placeholder="Cari nama, formula, IUPAC, atau SMILES…" />
     <select id="tag-filter"><option value="">Semua tag</option></select>
+    <select id="drug-filter">
+      <option value="">Semua Kriteria</option>
+      <option value="lipinski">Lolos Kaidah Lipinski (Drug-like)</option>
+      <option value="lead">Lead-Likeness (MW &le; 350, LogP &le; 3)</option>
+      <option value="frag">Rule of 3 (Fragment: MW &le; 300)</option>
+    </select>
     <select id="sort-select">
       <option value="newest">Terbaru dulu</option>
       <option value="oldest">Terlama dulu</option>
@@ -138,18 +213,152 @@
       <option value="mw_asc">Berat molekul ↑</option>
       <option value="mw_desc">Berat molekul ↓</option>
     </select>
+    
+    <div class="toolbar-actions">
+      <button class="icon-btn" id="load-pharmacopeia-btn" type="button" title="Muat 19 obat esensial farmakope standar ke koleksi">📦 Muat Farmakope</button>
+      <button class="icon-btn" id="toggle-space-btn" type="button">🗺️ Ruang Kimia (MW vs LogP)</button>
+      <button class="icon-btn" id="substruct-search-btn" type="button">🧩 Cari Substruktur</button>
+      <button class="icon-btn" id="sim-search-btn" type="button">🔎 Cari Kemiripan</button>
+      <button class="icon-btn" id="import-btn" type="button">📥 Impor Batch</button>
+      <div class="dropdown" id="export-dropdown">
+        <button class="icon-btn" id="export-btn" type="button">⭳ Ekspor Koleksi ▾</button>
+        <div class="dropdown-content">
+          <button class="dropdown-item" id="export-csv" type="button">📄 Format CSV (Excel)</button>
+          <button class="dropdown-item" id="export-json" type="button">📦 Format JSON</button>
+          <button class="dropdown-item" id="export-sdf" type="button">⚛️ Format SDF (Struktur)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection Statistics Summary Bar -->
+  <div id="stats-bar" style="display:flex; justify-content:space-around; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 18px; margin-bottom:18px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; flex-wrap:wrap; gap:10px;">
+    <div>Total Senyawa: <strong id="stat-total" style="color:var(--accent); font-size:0.95rem;">–</strong></div>
+    <div>Rata-rata MW: <strong id="stat-avg-mw" style="color:var(--ink);">– g/mol</strong></div>
+    <div>Rata-rata LogP: <strong id="stat-avg-logp" style="color:var(--ink);">–</strong></div>
+    <div>Kepatuhan Lipinski: <strong id="stat-lipinski" style="color:#38a169;">– %</strong></div>
+  </div>
+
+  <!-- Chemical Space 2D Scatterplot Panel -->
+  <div class="panel" id="chem-space-panel" style="margin-bottom: 20px;" hidden>
+    <div class="panel-head">
+      <span class="label">🗺️ Peta Ruang Kimiawi Koleksi (Molecular Weight vs LogP)</span>
+      <span class="tag">Lipinski Drug-like Space</span>
+    </div>
+    <div style="padding: 16px 20px; display: flex; flex-direction: column; align-items: center; position: relative;">
+      <div style="position: relative; width: 100%; max-width: 720px; height: 280px; background: var(--panel-2); border-radius: 10px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;">
+        <canvas id="chem-space-canvas" width="720" height="280" style="width: 100%; height: 100%; cursor: pointer;"></canvas>
+        <div id="space-tooltip" style="position: absolute; display: none; pointer-events: none; background: var(--panel); border: 1px solid var(--accent); padding: 4px 8px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--ink); box-shadow: var(--shadow); z-index: 10;"></div>
+      </div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-top: 8px; text-align: center;">
+        Zona hijau transparan = Ruang Obat Ideal Lipinski (MW &le; 500 g/mol, LogP &le; 5). Klik titik untuk fokus ke senyawa.
+      </div>
+    </div>
   </div>
 
   <div id="grid" class="grid"></div>
-  <div id="empty-state" class="empty-state" hidden>Belum ada senyawa tersimpan.</div>
+  <div id="empty-state" class="empty-state" hidden>Belum ada senyawa tersimpan. Simpan senyawa dari Tahap 1 atau Tahap 2, atau gunakan tombol Impor Batch di atas.</div>
   <div id="pagination" class="pagination"></div>
 </main>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<footer>ChemWebApp · Tahap 3 dari 5 · dibangun bertahap sebagai proyek belajar kimia + web</footer>
+<!-- Substructure Search Modal Dialog -->
+<div class="chem-modal-overlay" id="substruct-modal">
+  <div class="chem-modal" style="max-width: 620px;">
+    <div class="chem-modal-head">
+      <h3>🧩 Cari Berdasarkan Substruktur (Fragmen Kimia)</h3>
+      <button class="chem-modal-close" id="substruct-close-btn" type="button">&times;</button>
+    </div>
+    <div class="chem-modal-body">
+      <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+        Cari semua senyawa dalam koleksimu yang mengandung kerangka inti (*scaffold*) atau fragmen molekuler tertentu.
+      </p>
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="substruct-query-input" placeholder="Ketik SMARTS/SMILES fragmen, mis. c1ccccc1" style="flex:1; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;" />
+        <button class="icon-btn primary" id="substruct-run-btn" type="button">Cari Fragmen</button>
+      </div>
 
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;">
+        <span style="font-size: 0.75rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace;">Preset:</span>
+        <button type="button" class="preset-btn" onclick="document.getElementById('substruct-query-input').value='c1ccccc1';">Benzena</button>
+        <button type="button" class="preset-btn" onclick="document.getElementById('substruct-query-input').value='c1ccc2[nH]ccc2c1';">Indol</button>
+        <button type="button" class="preset-btn" onclick="document.getElementById('substruct-query-input').value='c1ccncc1';">Piridina</button>
+        <button type="button" class="preset-btn" onclick="document.getElementById('substruct-query-input').value='S(=O)(=O)N';">Sulfonamida</button>
+        <button type="button" class="preset-btn" onclick="document.getElementById('substruct-query-input').value='C(=O)O';">Karboksilat</button>
+      </div>
+
+      <div id="substruct-status" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 12px; min-height: 1.2em;"></div>
+      <div id="substruct-results-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+    <div class="chem-modal-foot">
+      <button class="icon-btn" id="substruct-done-btn" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Similarity Search Modal Dialog -->
+<div class="chem-modal-overlay" id="sim-modal">
+  <div class="chem-modal" style="max-width: 620px;">
+    <div class="chem-modal-head">
+      <h3>🔎 Cari Senyawa Mirip di Koleksi</h3>
+      <button class="chem-modal-close" id="sim-close-btn" type="button">&times;</button>
+    </div>
+    <div class="chem-modal-body">
+      <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+        Masukkan notasi SMILES atau nama molekul acuan untuk menemukan senyawa di dalam database koleksimu yang memiliki kemiripan struktur tertinggi (skor Tanimoto).
+      </p>
+      <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+        <input type="text" id="sim-query-input" placeholder="Masukkan SMILES acuan, mis. CCO atau CC(=O)Oc1ccccc1C(=O)O" style="flex:1; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;" />
+        <button class="icon-btn primary" id="sim-run-btn" type="button">Hitung Kemiripan</button>
+      </div>
+      <div id="sim-status" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 12px; min-height: 1.2em;"></div>
+      <div id="sim-results-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;"></div>
+    </div>
+    <div class="chem-modal-foot">
+      <button class="icon-btn" id="sim-done-btn" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal Dialog -->
+<div class="chem-modal-overlay" id="import-modal">
+  <div class="chem-modal">
+    <div class="chem-modal-head">
+      <h3>📥 Impor Batch Senyawa</h3>
+      <button class="chem-modal-close" id="import-close-btn" type="button">&times;</button>
+    </div>
+    <div class="chem-modal-body">
+      <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+        Impor file JSON/CSV koleksi, atau paste daftar SMILES baris demi baris di bawah ini.
+      </p>
+      
+      <div style="margin-bottom: 14px;">
+        <label style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; display: block; margin-bottom: 6px;">Unggah File (.json / .csv / .txt / .smi):</label>
+        <input type="file" id="import-file-input" accept=".json,.csv,.txt,.smi" style="font-size: 0.85rem; color: var(--ink);" />
+      </div>
+
+      <div>
+        <label style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; display: block; margin-bottom: 6px;">Atau Tempel Daftar SMILES (1 per baris):</label>
+        <textarea id="import-text" style="width: 100%; height: 120px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;" placeholder="CC(=O)Oc1ccccc1C(=O)O
+CN1C=NC2=C1C(=O)N(C(=O)N2C)C
+CCO"></textarea>
+      </div>
+      <div id="import-status" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-top: 10px; min-height: 1.2em;"></div>
+    </div>
+    <div class="chem-modal-foot">
+      <button class="icon-btn" id="import-cancel-btn" type="button">Batal</button>
+      <button class="icon-btn primary" id="import-submit-btn" type="button">Proses Impor</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>ChemWebApp · Tahap 3 dari 5 · Database Koleksi &amp; Manajemen Senyawa</footer>
+
+<script src="/public/nav-theme.js"></script>
 <script>
 (function () {
+  ChemApp.mountChemNavbar(3);
+
   const gridEl = document.getElementById('grid');
   const emptyEl = document.getElementById('empty-state');
   const paginationEl = document.getElementById('pagination');
@@ -158,14 +367,50 @@
   const sortSelect = document.getElementById('sort-select');
   const toastEl = document.getElementById('toast');
 
+  const exportDropdown = document.getElementById('export-dropdown');
+  const exportBtn = document.getElementById('export-btn');
+  const exportCsv = document.getElementById('export-csv');
+  const exportJson = document.getElementById('export-json');
+  const exportSdf = document.getElementById('export-sdf');
+
+  const importBtn = document.getElementById('import-btn');
+  const importModal = document.getElementById('import-modal');
+  const importCloseBtn = document.getElementById('import-close-btn');
+  const importCancelBtn = document.getElementById('import-cancel-btn');
+  const importSubmitBtn = document.getElementById('import-submit-btn');
+  const importFileInput = document.getElementById('import-file-input');
+  const importText = document.getElementById('import-text');
+  const importStatus = document.getElementById('import-status');
+
   let currentPage = 1;
   let searchDebounce = null;
 
   function showToast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 1800);
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
   }
+
+  // Export Dropdown Toggle
+  exportBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    exportDropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', () => exportDropdown.classList.remove('open'));
+
+  // Import Modal Handlers
+  importBtn.addEventListener('click', () => {
+    importModal.classList.add('open');
+    importStatus.textContent = '';
+  });
+  function closeImportModal() {
+    importModal.classList.remove('open');
+    importFileInput.value = '';
+    importText.value = '';
+    importStatus.textContent = '';
+  }
+  importCloseBtn.addEventListener('click', closeImportModal);
+  importCancelBtn.addEventListener('click', closeImportModal);
 
   async function loadTags() {
     try {
@@ -173,11 +418,44 @@
       const tags = await res.json();
       tagFilter.innerHTML = '<option value="">Semua tag</option>' +
         tags.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
-    } catch (e) { /* diamkan, tag filter opsional */ }
+    } catch (e) { /* diamkan */ }
+  }
+
+  const loadPharmBtn = document.getElementById('load-pharmacopeia-btn');
+  if (loadPharmBtn) {
+    loadPharmBtn.addEventListener('click', async () => {
+      if (!ChemApp.PHARMACOPEIA_DRUGS || !ChemApp.PHARMACOPEIA_DRUGS.length) return;
+      loadPharmBtn.disabled = true;
+      loadPharmBtn.textContent = 'Memuat…';
+      showToast('Memuat pustaka 19 obat farmakope standar ke koleksi…');
+      try {
+        for (const drug of ChemApp.PHARMACOPEIA_DRUGS) {
+          await fetch('/api/compounds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: drug.name,
+              canonicalSmiles: drug.smiles,
+              molecularFormula: drug.formula,
+              tags: [drug.class, 'Farmakope', 'Esensial'],
+              source: 'manual'
+            })
+          });
+        }
+        showToast('19 senyawa obat farmakope berhasil dimuat ke koleksi ✓');
+        loadCompounds(1);
+        loadTags();
+      } catch(e) {
+        showToast('Gagal memuat pustaka farmakope');
+      } finally {
+        loadPharmBtn.disabled = false;
+        loadPharmBtn.textContent = '📦 Muat Farmakope';
+      }
+    });
   }
 
   function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function escapeAttr(s) { return escapeHtml(s); }
 
@@ -196,13 +474,12 @@
   function renderCard(item) {
     const title = item.name || item.iupacName || item.molecularFormula || 'Tanpa nama';
     const desc = [];
-    if (typeof item.molecularWeight === 'number') desc.push(`MW ${item.molecularWeight.toFixed ? item.molecularWeight.toFixed(2) : item.molecularWeight}`);
-    if (typeof item.logp === 'number') desc.push(`LogP ${item.logp}`);
-    if (typeof item.tpsa === 'number') desc.push(`TPSA ${item.tpsa}`);
+    if (typeof item.molecularWeight === 'number') desc.push(`MW ${item.molecularWeight.toFixed(2)}`);
+    if (typeof item.logp === 'number') desc.push(`LogP ${item.logp.toFixed(2)}`);
+    if (typeof item.tpsa === 'number') desc.push(`TPSA ${item.tpsa.toFixed(1)}`);
     if (typeof item.hbd === 'number') desc.push(`HBD ${item.hbd}`);
     if (typeof item.hba === 'number') desc.push(`HBA ${item.hba}`);
-    if (typeof item.rotatableBonds === 'number') desc.push(`Rot.bond ${item.rotatableBonds}`);
-    if (typeof item.monoisotopicMass === 'number') desc.push(`Monoiso ${item.monoisotopicMass.toFixed ? item.monoisotopicMass.toFixed(2) : item.monoisotopicMass}`);
+    if (typeof item.rotatableBonds === 'number') desc.push(`Rot.B ${item.rotatableBonds}`);
 
     const physrow = [];
     if (item.meltingPoint) physrow.push(`Titik leleh: ${item.meltingPoint}`);
@@ -210,11 +487,17 @@
 
     const sourceLabel = SOURCE_LABEL[item.source] || 'Manual';
 
+    // Lipinski evaluation
+    const lip = ChemApp.evaluateLipinski(item.molecularWeight, item.logp, item.hbd, item.hba, item.rotatableBonds, item.tpsa);
+
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
       ${renderThumb(item)}
-      <span class="source-badge">${escapeHtml(sourceLabel)}</span>
+      <div class="card-top-row">
+        <span class="source-badge">${escapeHtml(sourceLabel)}</span>
+        <span class="lipinski-badge ${lip.statusClass}" title="${lip.violations} pelanggaran Lipinski">${lip.statusText}</span>
+      </div>
       <input class="name-input" type="text" placeholder="Nama senyawa…" value="${escapeAttr(item.name || '')}" />
       <input class="iupac-input" type="text" placeholder="Nama IUPAC…" value="${escapeAttr(item.iupacName || '')}" />
       <div class="formula">${escapeHtml(item.molecularFormula || '–')}</div>
@@ -222,11 +505,13 @@
       <div class="desc-row">${desc.map(d => `<span>${escapeHtml(d)}</span>`).join('')}</div>
       ${physrow.length ? `<div class="physrow">${physrow.map(p => escapeHtml(p)).join(' · ')}</div>` : ''}
       <input class="tags-input" type="text" placeholder="tag1, tag2, …" value="${escapeAttr((item.tags || []).join(', '))}" />
-      <textarea class="notes" placeholder="Catatan…">${escapeHtml(item.notes || '')}</textarea>
+      <textarea class="notes" placeholder="Catatan pribadi…">${escapeHtml(item.notes || '')}</textarea>
       <div class="actions">
-        <button class="icon-btn save-btn" type="button">💾 Simpan perubahan</button>
-        <button class="icon-btn open-btn" type="button">⚛ Buka di Tahap 1</button>
-        <button class="icon-btn danger delete-btn" type="button">🗑 Hapus</button>
+        <button class="icon-btn save-btn small" type="button">💾 Simpan</button>
+        <button class="icon-btn open-btn small" type="button">🔬 Viewer 2D/3D</button>
+        <button class="icon-btn comp-btn small" type="button">⚖️ Komparasi</button>
+        <div class="card-sendto-wrap" style="display:inline-block;"></div>
+        <button class="icon-btn danger delete-btn small" type="button">🗑 Hapus</button>
       </div>
     `;
 
@@ -236,10 +521,20 @@
     const notesInput = card.querySelector('.notes');
     const saveBtn = card.querySelector('.save-btn');
     const openBtn = card.querySelector('.open-btn');
+    const compBtn = card.querySelector('.comp-btn');
     const deleteBtn = card.querySelector('.delete-btn');
+    const sendtoWrap = card.querySelector('.card-sendto-wrap');
+
+    if (sendtoWrap && ChemApp.renderSendToHub && item.canonicalSmiles) {
+      ChemApp.renderSendToHub(item.canonicalSmiles, sendtoWrap, 3);
+    }
 
     openBtn.addEventListener('click', () => {
-      window.open('/tahap1?smiles=' + encodeURIComponent(item.canonicalSmiles), '_blank');
+      window.location.href = '/tahap1?smiles=' + encodeURIComponent(item.canonicalSmiles);
+    });
+
+    compBtn.addEventListener('click', () => {
+      window.location.href = '/tahap4?smilesA=' + encodeURIComponent(item.canonicalSmiles);
     });
 
     saveBtn.addEventListener('click', async () => {
@@ -258,13 +553,13 @@
           }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        showToast('Perubahan disimpan');
+        showToast('Perubahan berhasil disimpan ✓');
         loadTags();
       } catch (e) {
         showToast('Gagal menyimpan perubahan');
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Simpan perubahan';
+        saveBtn.textContent = '💾 Simpan';
       }
     });
 
@@ -274,14 +569,47 @@
         const res = await fetch(`/api/compounds/${item._id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         card.remove();
-        showToast('Senyawa dihapus');
+        showToast('Senyawa berhasil dihapus ✓');
         loadTags();
       } catch (e) {
-        showToast('Gagal menghapus');
+        showToast('Gagal menghapus senyawa');
       }
     });
 
     return card;
+  }
+
+  const drugFilter = document.getElementById('drug-filter');
+  drugFilter.addEventListener('change', () => loadCompounds(1));
+
+  async function updateCollectionStats() {
+    try {
+      const res = await fetch('/api/compounds/export/all');
+      if (!res.ok) return;
+      const all = await res.json();
+      if (!all.length) {
+        document.getElementById('stat-total').textContent = '0';
+        document.getElementById('stat-avg-mw').textContent = '–';
+        document.getElementById('stat-avg-logp').textContent = '–';
+        document.getElementById('stat-lipinski').textContent = '–';
+        return;
+      }
+
+      let sumMw = 0, sumLogP = 0, countLip = 0;
+      all.forEach(c => {
+        const mw = c.molecularWeight || 0;
+        const logp = (c.logp !== null && c.logp !== undefined) ? c.logp : 0;
+        sumMw += mw;
+        sumLogP += logp;
+        const lip = ChemApp.evaluateLipinski(c.molecularWeight, c.logp, c.hbd, c.hba, c.rotatableBonds, c.tpsa);
+        if (lip && lip.violations === 0) countLip++;
+      });
+
+      document.getElementById('stat-total').textContent = all.length.toString();
+      document.getElementById('stat-avg-mw').textContent = (sumMw / all.length).toFixed(1) + ' g/mol';
+      document.getElementById('stat-avg-logp').textContent = (sumLogP / all.length).toFixed(2);
+      document.getElementById('stat-lipinski').textContent = ((countLip / all.length) * 100).toFixed(1) + ' %';
+    } catch(e) {}
   }
 
   async function loadCompounds(page) {
@@ -298,16 +626,28 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
 
-      if (!data.items.length) {
+      let items = data.items || [];
+      const dFilter = drugFilter ? drugFilter.value : '';
+      if (dFilter === 'lipinski') {
+        items = items.filter(c => ChemApp.evaluateLipinski(c.molecularWeight, c.logp, c.hbd, c.hba, c.rotatableBonds, c.tpsa).violations === 0);
+      } else if (dFilter === 'lead') {
+        items = items.filter(c => (c.molecularWeight || 0) <= 350 && (c.logp !== null ? c.logp : 0) <= 3.0);
+      } else if (dFilter === 'frag') {
+        items = items.filter(c => (c.molecularWeight || 0) <= 300 && (c.hbd || 0) <= 3 && (c.hba || 0) <= 3);
+      }
+
+      if (!items.length) {
+        emptyEl.textContent = dFilter ? 'Tidak ada senyawa yang memenuhi kriteria filter obat ini.' : 'Belum ada senyawa tersimpan.';
         emptyEl.hidden = false;
         paginationEl.innerHTML = '';
         return;
       }
 
-      data.items.forEach(item => gridEl.appendChild(renderCard(item)));
+      items.forEach(item => gridEl.appendChild(renderCard(item)));
       renderPagination(data.page, data.pages);
+      updateCollectionStats();
     } catch (e) {
-      emptyEl.textContent = 'Gagal memuat koleksi. Coba refresh halaman.';
+      emptyEl.textContent = 'Gagal memuat koleksi. Pastikan server & MongoDB terhubung.';
       emptyEl.hidden = false;
     }
   }
@@ -317,13 +657,172 @@
     if (pages <= 1) return;
     for (let i = 1; i <= pages; i++) {
       const btn = document.createElement('button');
-      btn.className = 'icon-btn';
+      btn.className = 'icon-btn small';
       btn.textContent = i;
-      if (i === page) btn.style.borderColor = 'var(--accent)';
+      if (i === page) {
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'var(--accent)';
+        btn.style.fontWeight = '600';
+      }
       btn.addEventListener('click', () => loadCompounds(i));
       paginationEl.appendChild(btn);
     }
   }
+
+  // --- Export Logic ---
+  async function fetchAllForExport() {
+    const res = await fetch('/api/compounds/export/all');
+    if (!res.ok) throw new Error('Gagal mengambil data ekspor');
+    return res.json();
+  }
+
+  exportCsv.addEventListener('click', async () => {
+    exportDropdown.classList.remove('open');
+    showToast('Menyiapkan file CSV…');
+    try {
+      const items = await fetchAllForExport();
+      if (!items.length) return showToast('Koleksi masih kosong');
+      
+      const headers = ['CID', 'Nama', 'Nama IUPAC', 'Formula', 'Berat Molekul (MW)', 'Canonical SMILES', 'InChIKey', 'LogP', 'TPSA', 'HBD', 'HBA', 'Rotatable Bonds', 'Tags', 'Catatan'];
+      const rows = items.map(c => [
+        c.cid || '',
+        `"${(c.name || '').replace(/"/g, '""')}"`,
+        `"${(c.iupacName || '').replace(/"/g, '""')}"`,
+        c.molecularFormula || '',
+        c.molecularWeight || '',
+        `"${(c.canonicalSmiles || '').replace(/"/g, '""')}"`,
+        c.inchikey || '',
+        c.logp || '',
+        c.tpsa || '',
+        c.hbd || '',
+        c.hba || '',
+        c.rotatableBonds || '',
+        `"${(c.tags || []).join(', ')}"`,
+        `"${(c.notes || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      ChemApp.downloadBlobUrl(URL.createObjectURL(blob), `chemwebapp_koleksi_${Date.now()}.csv`);
+      showToast('File CSV berhasil diunduh ✓');
+    } catch (e) {
+      showToast('Gagal ekspor CSV: ' + e.message);
+    }
+  });
+
+  exportJson.addEventListener('click', async () => {
+    exportDropdown.classList.remove('open');
+    showToast('Menyiapkan file JSON…');
+    try {
+      const items = await fetchAllForExport();
+      if (!items.length) return showToast('Koleksi masih kosong');
+      const jsonStr = JSON.stringify(items, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      ChemApp.downloadBlobUrl(URL.createObjectURL(blob), `chemwebapp_koleksi_${Date.now()}.json`);
+      showToast('File JSON berhasil diunduh ✓');
+    } catch (e) {
+      showToast('Gagal ekspor JSON: ' + e.message);
+    }
+  });
+
+  exportSdf.addEventListener('click', async () => {
+    exportDropdown.classList.remove('open');
+    showToast('Menyiapkan file SDF…');
+    try {
+      const items = await fetchAllForExport();
+      if (!items.length) return showToast('Koleksi masih kosong');
+      
+      let sdfContent = '';
+      items.forEach(c => {
+        sdfContent += `${c.name || c.molecularFormula || 'Compound'}\n`;
+        sdfContent += `  ChemWebApp ${new Date().toISOString()}\n\n`;
+        sdfContent += `  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n`;
+        sdfContent += `> <CID>\n${c.cid || ''}\n\n`;
+        sdfContent += `> <NAME>\n${c.name || ''}\n\n`;
+        sdfContent += `> <IUPAC_NAME>\n${c.iupacName || ''}\n\n`;
+        sdfContent += `> <SMILES>\n${c.canonicalSmiles || ''}\n\n`;
+        sdfContent += `> <FORMULA>\n${c.molecularFormula || ''}\n\n`;
+        sdfContent += `> <MOLECULAR_WEIGHT>\n${c.molecularWeight || ''}\n\n`;
+        sdfContent += `> <LOGP>\n${c.logp || ''}\n\n`;
+        sdfContent += `> <TPSA>\n${c.tpsa || ''}\n\n`;
+        sdfContent += `$$$$\n`;
+      });
+
+      const blob = new Blob([sdfContent], { type: 'chemical/x-mdl-sdfile' });
+      ChemApp.downloadBlobUrl(URL.createObjectURL(blob), `chemwebapp_koleksi_${Date.now()}.sdf`);
+      showToast('File SDF berhasil diunduh ✓');
+    } catch (e) {
+      showToast('Gagal ekspor SDF: ' + e.message);
+    }
+  });
+
+  // --- Batch Import Logic ---
+  importSubmitBtn.addEventListener('click', async () => {
+    const file = importFileInput.files[0];
+    const rawText = importText.value.trim();
+    if (!file && !rawText) {
+      importStatus.textContent = 'Pilih file atau masukkan daftar SMILES terlebih dahulu.';
+      return;
+    }
+
+    importSubmitBtn.disabled = true;
+    importStatus.textContent = 'Memproses data impor…';
+
+    let compoundsToImport = [];
+
+    try {
+      if (file) {
+        const fileContent = await file.text();
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(fileContent);
+          compoundsToImport = Array.isArray(parsed) ? parsed : (parsed.items || [parsed]);
+        } else {
+          // CSV / TXT / SMI
+          const lines = fileContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          lines.forEach(line => {
+            const parts = line.split(/[,\t]/).map(p => p.replace(/^["']|["']$/g, '').trim());
+            const smiles = parts[0];
+            const name = parts[1] || '';
+            if (smiles && !smiles.startsWith('#') && smiles.toLowerCase() !== 'canonical smiles') {
+              compoundsToImport.push({ canonicalSmiles: smiles, name: name, source: 'manual' });
+            }
+          });
+        }
+      } else if (rawText) {
+        const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        lines.forEach(line => {
+          const parts = line.split(/[,\t\s]+/);
+          const smiles = parts[0];
+          const name = parts.slice(1).join(' ');
+          if (smiles) {
+            compoundsToImport.push({ canonicalSmiles: smiles, name: name, source: 'manual' });
+          }
+        });
+      }
+
+      if (!compoundsToImport.length) {
+        throw new Error('Tidak ditemukan data SMILES yang valid untuk diimpor');
+      }
+
+      importStatus.textContent = `Mengirim ${compoundsToImport.length} senyawa ke database…`;
+      const res = await fetch('/api/compounds/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(compoundsToImport)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'HTTP ' + res.status);
+
+      showToast(`Impor berhasil: ${result.inserted} baru, ${result.updated} diperbarui ✓`);
+      closeImportModal();
+      loadTags();
+      loadCompounds(1);
+    } catch (err) {
+      importStatus.textContent = 'Gagal impor: ' + err.message;
+    } finally {
+      importSubmitBtn.disabled = false;
+    }
+  });
 
   searchInput.addEventListener('input', () => {
     clearTimeout(searchDebounce);
@@ -332,9 +831,356 @@
   tagFilter.addEventListener('change', () => loadCompounds(1));
   sortSelect.addEventListener('change', () => loadCompounds(1));
 
+  // --- Similarity Search Logic (Tanimoto via RDKit WASM) ---
+  const simSearchBtn = document.getElementById('sim-search-btn');
+  const simModal = document.getElementById('sim-modal');
+  const simCloseBtn = document.getElementById('sim-close-btn');
+  const simDoneBtn = document.getElementById('sim-done-btn');
+  const simQueryInput = document.getElementById('sim-query-input');
+  const simRunBtn = document.getElementById('sim-run-btn');
+  const simStatus = document.getElementById('sim-status');
+  const simResultsList = document.getElementById('sim-results-list');
+
+  let RDKitModule = null;
+  if (typeof initRDKitModule === 'function') {
+    initRDKitModule().then(rd => { RDKitModule = rd; }).catch(() => {});
+  }
+
+  function openSimModal() {
+    simModal.classList.add('open');
+    simQueryInput.focus();
+    simStatus.textContent = '';
+    simResultsList.innerHTML = '';
+  }
+  function closeSimModal() {
+    simModal.classList.remove('open');
+  }
+  simSearchBtn.addEventListener('click', openSimModal);
+  simCloseBtn.addEventListener('click', closeSimModal);
+  simDoneBtn.addEventListener('click', closeSimModal);
+
+  function calculateTanimoto(fpA, fpB) {
+    if (!fpA || !fpB || fpA.length !== fpB.length) return 0;
+    let bitAnd = 0;
+    let bitOr = 0;
+    for (let i = 0; i < fpA.length; i++) {
+      const a = fpA.charCodeAt(i) - 48;
+      const b = fpB.charCodeAt(i) - 48;
+      if (a === 1 && b === 1) bitAnd++;
+      if (a === 1 || b === 1) bitOr++;
+    }
+    return bitOr === 0 ? 0 : bitAnd / bitOr;
+  }
+
+  simRunBtn.addEventListener('click', async () => {
+    const query = (simQueryInput.value || '').trim();
+    if (!query) {
+      simStatus.textContent = 'Masukkan SMILES acuan terlebih dahulu.';
+      return;
+    }
+    if (!RDKitModule) {
+      simStatus.textContent = 'Mesin RDKit sedang dimuat, coba sebentar lagi…';
+      return;
+    }
+
+    simRunBtn.disabled = true;
+    simStatus.textContent = 'Memuat seluruh koleksi & menghitung sidik jari molekuler…';
+    simResultsList.innerHTML = '';
+
+    try {
+      let qMol = null;
+      try { qMol = RDKitModule.get_mol(query); } catch(e){}
+      if (!qMol || !qMol.is_valid()) {
+        // Coba cari nama ke PubChem jika bukan SMILES langsung
+        try {
+          const resPub = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/property/CanonicalSMILES/JSON`);
+          const dataPub = await resPub.json();
+          const s = dataPub && dataPub.PropertyTable && dataPub.PropertyTable.Properties[0] && dataPub.PropertyTable.Properties[0].CanonicalSMILES;
+          if (s) qMol = RDKitModule.get_mol(s);
+        } catch(e){}
+      }
+
+      if (!qMol || !qMol.is_valid()) {
+        throw new Error('SMILES acuan tidak valid / nama tidak ditemukan di PubChem');
+      }
+
+      const qFp = qMol.get_pattern_fp();
+      const qSmiles = qMol.get_smiles();
+      qMol.delete();
+
+      const res = await fetch('/api/compounds/export/all');
+      if (!res.ok) throw new Error('Gagal mengambil data koleksi');
+      const allCompounds = await res.json();
+
+      if (!allCompounds.length) {
+        simStatus.textContent = 'Koleksi masih kosong.';
+        return;
+      }
+
+      const scored = [];
+      for (const item of allCompounds) {
+        if (!item.canonicalSmiles) continue;
+        try {
+          const itemMol = RDKitModule.get_mol(item.canonicalSmiles);
+          if (itemMol && itemMol.is_valid()) {
+            const itemFp = itemMol.get_pattern_fp();
+            const score = calculateTanimoto(qFp, itemFp);
+            scored.push({ item, score });
+            itemMol.delete();
+          }
+        } catch(e){}
+      }
+
+      scored.sort((a, b) => b.score - a.score);
+
+      simStatus.textContent = `Ditemukan ${scored.length} senyawa. Diurutkan berdasarkan skor kemiripan:`;
+
+      simResultsList.innerHTML = scored.slice(0, 15).map(({ item, score }) => {
+        const pct = (score * 100).toFixed(1);
+        let scoreBadgeClass = 'pass';
+        if (score < 0.4) scoreBadgeClass = 'fail';
+        else if (score < 0.7) scoreBadgeClass = 'warn';
+
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px; gap:12px;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHtml(item.name || item.molecularFormula || 'Senyawa')}
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHtml(item.canonicalSmiles)}
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="lipinski-badge ${scoreBadgeClass}" style="font-size:0.75rem; padding:4px 8px;">
+                ${pct}% Tanimoto
+              </span>
+              <a href="/tahap4?smilesA=${encodeURIComponent(qSmiles)}&smilesB=${encodeURIComponent(item.canonicalSmiles)}" class="icon-btn small" target="_self">
+                ⚖️ Komparasi
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch(err) {
+      simStatus.textContent = 'Error: ' + err.message;
+    } finally {
+      simRunBtn.disabled = false;
+    }
+  });
+
+  // Substructure Search Handlers
+  const substructModal = document.getElementById('substruct-modal');
+  const substructSearchBtn = document.getElementById('substruct-search-btn');
+  const substructCloseBtn = document.getElementById('substruct-close-btn');
+  const substructDoneBtn = document.getElementById('substruct-done-btn');
+  const substructQueryInput = document.getElementById('substruct-query-input');
+  const substructRunBtn = document.getElementById('substruct-run-btn');
+  const substructStatus = document.getElementById('substruct-status');
+  const substructResultsList = document.getElementById('substruct-results-list');
+
+  function openSubstructModal() {
+    substructModal.classList.add('open');
+    substructQueryInput.focus();
+    substructStatus.textContent = '';
+    substructResultsList.innerHTML = '';
+  }
+  function closeSubstructModal() {
+    substructModal.classList.remove('open');
+  }
+  substructSearchBtn.addEventListener('click', openSubstructModal);
+  substructCloseBtn.addEventListener('click', closeSubstructModal);
+  substructDoneBtn.addEventListener('click', closeSubstructModal);
+
+  substructRunBtn.addEventListener('click', async () => {
+    const q = (substructQueryInput.value || '').trim();
+    if (!q) { substructStatus.textContent = 'Ketik pola SMARTS/SMILES fragmen terlebih dahulu.'; return; }
+    if (!RDKitModule) { substructStatus.textContent = 'RDKit sedang dimuat…'; return; }
+
+    substructRunBtn.disabled = true;
+    substructStatus.textContent = 'Memindai koleksi dengan RDKit SMARTS matching…';
+    substructResultsList.innerHTML = '';
+
+    try {
+      let qmol = null;
+      try { qmol = RDKitModule.get_qmol(q); } catch(e){}
+      if (!qmol || !qmol.is_valid()) {
+        try { qmol = RDKitModule.get_mol(q); } catch(e){}
+      }
+      if (!qmol || !qmol.is_valid()) throw new Error('Fragmen SMARTS/SMILES tidak valid');
+
+      const res = await fetch('/api/compounds/export/all');
+      const allCompounds = await res.json();
+      const matched = [];
+
+      for (const item of allCompounds) {
+        if (!item.canonicalSmiles) continue;
+        try {
+          const itemMol = RDKitModule.get_mol(item.canonicalSmiles);
+          if (itemMol && itemMol.is_valid()) {
+            const m = JSON.parse(itemMol.get_substruct_match(qmol));
+            if (m && m.atoms && m.atoms.length > 0) {
+              matched.push(item);
+            }
+            itemMol.delete();
+          }
+        } catch(e){}
+      }
+      qmol.delete();
+
+      if (!matched.length) {
+        substructStatus.textContent = `Tidak ada senyawa yang mengandung fragmen "${q}".`;
+      } else {
+        substructStatus.textContent = `Ditemukan ${matched.length} senyawa yang mengandung fragmen "${q}":`;
+        substructResultsList.innerHTML = matched.map(item => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px; gap:12px;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.95rem;">${escapeHtml(item.name || item.molecularFormula || 'Senyawa')}</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted);">${escapeHtml(item.canonicalSmiles)}</div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <a href="/tahap1?smiles=${encodeURIComponent(item.canonicalSmiles)}" class="icon-btn small" target="_self">🔬 Viewer</a>
+              <a href="/tahap4?smilesA=${encodeURIComponent(q)}&smilesB=${encodeURIComponent(item.canonicalSmiles)}" class="icon-btn small" target="_self">⚖️ Komparasi</a>
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch(err) {
+      substructStatus.textContent = 'Error: ' + err.message;
+    } finally {
+      substructRunBtn.disabled = false;
+    }
+  });
+
+  // Chemical Space 2D Scatterplot Generator
+  const toggleSpaceBtn = document.getElementById('toggle-space-btn');
+  const chemSpacePanel = document.getElementById('chem-space-panel');
+  const chemSpaceCanvas = document.getElementById('chem-space-canvas');
+  const spaceTooltip = document.getElementById('space-tooltip');
+
+  let spacePoints = [];
+
+  function drawChemicalSpace(compounds) {
+    if (!chemSpaceCanvas) return;
+    const ctx = chemSpaceCanvas.getContext('2d');
+    const w = chemSpaceCanvas.width;
+    const h = chemSpaceCanvas.height;
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const padLeft = 45;
+    const padRight = 20;
+    const padTop = 20;
+    const padBottom = 40;
+    const plotW = w - padLeft - padRight;
+    const plotH = h - padTop - padBottom;
+
+    const minMW = 0, maxMW = 600;
+    const minLogP = -2, maxLogP = 7;
+
+    function mwToX(mw) { return padLeft + ((mw - minMW) / (maxMW - minMW)) * plotW; }
+    function logpToY(logp) { return (padTop + plotH) - ((logp - minLogP) / (maxLogP - minLogP)) * plotH; }
+
+    const gridCol = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+    const textCol = isLight ? '#5e7260' : '#8a998a';
+    const lipinskiZoneCol = isLight ? 'rgba(72,187,120,0.12)' : 'rgba(72,187,120,0.15)';
+
+    // Draw Lipinski Drug-like Zone (MW <= 500, LogP <= 5, LogP >= 0)
+    const x0 = mwToX(0);
+    const x500 = mwToX(500);
+    const y5 = logpToY(5);
+    const y0 = logpToY(0);
+    ctx.fillStyle = lipinskiZoneCol;
+    ctx.fillRect(x0, y5, x500 - x0, y0 - y5);
+    ctx.strokeStyle = isLight ? '#38a169' : '#48bb78';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(x0, y5, x500 - x0, y0 - y5);
+    ctx.setLineDash([]);
+
+    // Axes & Ticks
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    for (let mw = 0; mw <= 600; mw += 100) {
+      const x = mwToX(mw);
+      ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, padTop + plotH); ctx.strokeStyle = gridCol; ctx.stroke();
+      ctx.fillStyle = textCol; ctx.fillText(mw.toString(), x, padTop + plotH + 6);
+    }
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let logp = -2; logp <= 7; logp += 2) {
+      const y = logpToY(logp);
+      ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(padLeft + plotW, y); ctx.strokeStyle = gridCol; ctx.stroke();
+      ctx.fillStyle = textCol; ctx.fillText(logp.toString(), padLeft - 6, y);
+    }
+
+    ctx.fillStyle = textCol;
+    ctx.textAlign = 'center';
+    ctx.font = '600 11px Space Grotesk, sans-serif';
+    ctx.fillText('Massa Molekul / Molecular Weight (g/mol)', padLeft + plotW / 2, h - 10);
+
+    // Plot Points
+    spacePoints = [];
+    (compounds || []).forEach(c => {
+      const mw = c.molecularWeight || 200;
+      const logp = (c.logp !== null && c.logp !== undefined) ? c.logp : 2.0;
+      const px = mwToX(mw);
+      const py = logpToY(logp);
+      spacePoints.push({ ...c, px, py, mw, logp });
+
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = (mw <= 500 && logp <= 5) ? (isLight ? '#0f8e81' : '#4fd1c5') : (isLight ? '#e53e3e' : '#fc8181');
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    });
+  }
+
+  toggleSpaceBtn.addEventListener('click', async () => {
+    chemSpacePanel.hidden = !chemSpacePanel.hidden;
+    toggleSpaceBtn.classList.toggle('active', !chemSpacePanel.hidden);
+    if (!chemSpacePanel.hidden) {
+      try {
+        const res = await fetch('/api/compounds/export/all');
+        const all = await res.json();
+        drawChemicalSpace(all);
+      } catch(e){}
+    }
+  });
+
+  chemSpaceCanvas.addEventListener('mousemove', (e) => {
+    const rect = chemSpaceCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (chemSpaceCanvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (chemSpaceCanvas.height / rect.height);
+
+    let nearest = null;
+    let minDist = 14;
+    spacePoints.forEach(p => {
+      const dist = Math.hypot(p.px - mx, p.py - my);
+      if (dist < minDist) { minDist = dist; nearest = p; }
+    });
+
+    if (nearest) {
+      spaceTooltip.style.display = 'block';
+      spaceTooltip.style.left = `${(nearest.px / chemSpaceCanvas.width) * 100}%`;
+      spaceTooltip.style.top = `${Math.max(10, (nearest.py / chemSpaceCanvas.height) * 100 - 18)}%`;
+      spaceTooltip.innerHTML = `<strong>${escapeHtml(nearest.name || 'Senyawa')}</strong><br/>MW: ${nearest.mw.toFixed(1)} | LogP: ${nearest.logp.toFixed(2)}`;
+    } else {
+      spaceTooltip.style.display = 'none';
+    }
+  });
+  chemSpaceCanvas.addEventListener('mouseleave', () => { spaceTooltip.style.display = 'none'; });
+
   loadTags();
   loadCompounds(1);
 })();
 </script>
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
 </body>
 </html>

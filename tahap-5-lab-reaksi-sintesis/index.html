@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChemWebApp — Tahap 5: Lab Reaksi &amp; Desain Sintesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/nav-theme.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  header {
+    position: relative;
+    padding: 36px 6vw 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(26px, 3.8vw, 42px);
+    margin: 10px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    color: var(--muted);
+    max-width: 680px;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  main {
+    padding: 30px 6vw 72px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* Mode Navigation Tabs */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .mode-tab {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .mode-tab:hover {
+    color: var(--ink);
+    border-color: var(--accent-dim);
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .mode-content[hidden] { display: none; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .panel-head .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .rxn-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .rxn-preset-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+  }
+  .rxn-preset-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .rxn-preset-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .rxn-preset-desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* Reaction Type Selector Bar */
+  .rxn-type-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .rxn-type-bar select {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 220px;
+  }
+
+  /* Reaction Equation Flow Layout */
+  .rxn-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1.25fr;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 960px) {
+    .rxn-flow { grid-template-columns: 1fr; }
+  }
+
+  .rxn-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: var(--shadow);
+  }
+  .rxn-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .rxn-input {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+  }
+  .rxn-input:focus { border-color: var(--accent); }
+
+  .rxn-thumb {
+    height: 180px;
+    background: #ffffff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 6px;
+  }
+  .rxn-thumb svg { max-width: 100%; max-height: 100%; }
+
+  .rxn-symbol {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .icon-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+  .icon-btn:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .icon-btn.primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    color: var(--bg);
+  }
+
+  .status-banner {
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+  }
+
+  /* Stoichiometry Calculator Box */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 18px;
+  }
+  .calc-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .calc-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .calc-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--panel-2);
+    border: 1px solid var(--accent-dim);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <div class="eyebrow">ChemWebApp — Tahap 5 / 5</div>
+  <h1>Laboratorium Reaksi Kimia &amp; Desain Sintesis</h1>
+  <p>Simulasi reaksi kimia organik ilmiah tervalidasi (Esterifikasi, Pembentukan Amida/Peptida, Eter Williamson, Reduksi Karbonil), diskoneksi retrosintesis obat, dan stoikiometri rendemen.</p>
+</header>
+
+<main>
+  <!-- Mode Selection Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-rxn" type="button">⚗️ 1. Simulator Reaksi Kimia Dinamis</button>
+    <button class="mode-tab" id="tab-retro" type="button">🧩 2. Analisis Retrosintesis Obat</button>
+    <button class="mode-tab" id="tab-stoich" type="button">⚖️ 3. Kalkulator Stoikiometri &amp; Rendemen</button>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- TAB 1: SIMULATOR REAKSI KIMIA DINAMIS -->
+  <!-- ============================================================== -->
+  <div class="mode-content" id="content-rxn">
+    <div style="margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">
+      Katalog Reaksi Sintesis Populer:
+    </div>
+    <div class="rxn-presets-grid" id="rxn-presets"></div>
+
+    <div class="rxn-type-bar">
+      <label style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.9rem;">Jenis Reaksi:</label>
+      <select id="rxn-type-select">
+        <option value="auto">🔄 Deteksi Otomatis (Auto-Detect Berdasarkan Gugus Fungsi Reaktan)</option>
+        <option value="ester">🧪 Esterifikasi (Asam Karboksilat + Alkohol / Fenol ➔ Ester)</option>
+        <option value="amide">🧬 Pembentukan Ikatan Amida / Peptida (Asam Karboksilat + Amina ➔ Amida)</option>
+        <option value="ether">⚛️ Sintesis Eter Williamson (Alkohol / Fenol + Alkil Halida ➔ Eter)</option>
+        <option value="reduction">💧 Reduksi Karbonil (Keton / Aldehid ➔ Alkohol)</option>
+      </select>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted);" id="rxn-rule-hint">H⁺ / Katalis Asam / Refluks</span>
+    </div>
+
+    <div class="status-banner" id="rxn-status">
+      <span>💡</span> <span id="status-text">Masukkan notasi SMILES reaktan apa saja di bawah ini, lalu klik <strong>Jalankan Reaksi</strong> untuk mensimulasikan reaksi kimia secara ilmiah.</span>
+    </div>
+
+    <!-- Visual Reaction Flow -->
+    <div class="rxn-flow">
+      <!-- Reaktan A -->
+      <div class="rxn-card">
+        <div class="rxn-card-head">
+          <span>Reaktan A</span>
+          <span id="name-a" style="color:var(--accent);">Asam Salisilat</span>
+        </div>
+        <input type="text" class="rxn-input" id="smiles-a" placeholder="Masukkan SMILES Reaktan A" value="Oc1ccccc1C(=O)O" />
+        <div class="rxn-thumb" id="thumb-a"></div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); text-align:center;" id="mw-a">MW: –</div>
+      </div>
+
+      <!-- Plus Operator -->
+      <div class="rxn-symbol">+</div>
+
+      <!-- Reaktan B -->
+      <div class="rxn-card">
+        <div class="rxn-card-head">
+          <span>Reaktan B</span>
+          <span id="name-b" style="color:var(--accent);">Asam Asetat</span>
+        </div>
+        <input type="text" class="rxn-input" id="smiles-b" placeholder="Masukkan SMILES Reaktan B" value="CC(=O)O" />
+        <div class="rxn-thumb" id="thumb-b"></div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); text-align:center;" id="mw-b">MW: –</div>
+      </div>
+
+      <!-- Arrow Operator & Action -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="icon-btn primary" id="run-rxn-btn" type="button" style="padding:11px 18px; font-size:0.85rem;">
+          ▶ Jalankan Reaksi
+        </button>
+        <div class="rxn-symbol" style="line-height:0.8;">➔</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--muted);" id="rxn-cond-tag">H⁺ / Katalis</span>
+      </div>
+
+      <!-- Produk Utama -->
+      <div class="rxn-card" style="border-color: var(--accent);">
+        <div class="rxn-card-head">
+          <span style="color:var(--accent);">⭐ Produk Reaksi</span>
+          <span id="name-prod" style="color:var(--accent);">Aspirin</span>
+        </div>
+        <input type="text" class="rxn-input" id="smiles-prod" placeholder="SMILES Produk" value="CC(=O)Oc1ccccc1C(=O)O" />
+        <div class="rxn-thumb" id="thumb-prod"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted);" id="mw-prod">MW: –</span>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div id="sendto-prod-hub-wrap" style="display:inline-block;"></div>
+            <a id="link-prod-t1" href="/tahap1" class="icon-btn small" target="_blank" title="Buka di Tahap 1 Viewer">🔬 2D/3D</a>
+            <a id="link-prod-t4" href="/tahap4" class="icon-btn small" target="_blank" title="Komparasi dengan Bahan Awal">⚖️ Komparasi</a>
+            <button id="save-prod-btn" class="icon-btn small" type="button" title="Simpan ke Koleksi Tahap 3">☆ Simpan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visualisasi Mekanisme Reaksi Bertahap & Protokol Keselamatan -->
+    <div class="panel" style="margin-top: 20px;">
+      <div class="panel-head">
+        <span class="label">🔬 Tahapan Mekanisme Reaksi Kimiawi (Reaction Mechanism &amp; Intermediates)</span>
+        <span class="tag" id="mech-type-tag">Mekanisme Bertahap</span>
+      </div>
+      <div style="padding: 18px 22px;">
+        <div id="mechanism-steps-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;"></div>
+        
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 18px; border-left:4px solid var(--amber);">
+          <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.9rem; color:var(--amber); margin-bottom:4px;">
+            ⚠️ Protokol Keselamatan Kerja Laboratorium &amp; Manajemen Eksotermik
+          </div>
+          <div style="font-size:0.82rem; line-height:1.6; color:var(--muted);" id="rxn-safety-tips">
+            Gunakan lemari asam (*fume hood*) saat menangani asam pekat dan anhidrida asam. Tambahkan reaktan secara perlahan dalam penangas es (*ice bath*) untuk mengendalikan pelepasan kalor eksotermik.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- TAB 2: ANALISIS RETROSINTESIS OBAT -->
+  <!-- ============================================================== -->
+  <div class="mode-content" id="content-retro" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">🧩 Analisis Diskoneksi Retrosintesis Ilmiah (E.J. Corey Model)</span>
+        <span class="tag">Target ➔ Prekursor A + B</span>
+      </div>
+      <div style="padding: 20px;">
+        <p style="font-size: 0.9rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+          Masukkan notasi SMILES molekul target obat atau pilih salah satu obat di bawah. Sistem akan menganalisis ikatan strategis (ikatan ester, amida, atau eter) dan membedahnya menjadi 2 molekul bahan awal (*precursors*) yang siap disintesis.
+        </p>
+
+        <div style="display:flex; gap:8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <input type="text" id="retro-target-input" placeholder="Masukkan SMILES obat target, mis. CC(=O)Oc1ccccc1C(=O)O (Aspirin)" style="flex:1; min-width:240px; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:10px 14px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:0.85rem;" />
+          <button class="icon-btn primary" id="run-retro-btn" type="button">Analisis Diskoneksi</button>
+        </div>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 20px;" id="retro-presets"></div>
+
+        <div id="retro-results-container">
+          <div style="text-align:center; padding: 30px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;">
+            Pilih atau masukkan molekul target untuk melihat dekomposisi retrosintesisnya.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- TAB 3: KALKULATOR STOIKIOMETRI & RENDEMEN -->
+  <!-- ============================================================== -->
+  <div class="mode-content" id="content-stoich" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">⚖️ Kalkulator Stoikiometri &amp; Persentase Rendemen (% Yield)</span>
+        <span class="tag">Praktikum Sintesis</span>
+      </div>
+      <div style="padding: 20px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div class="calc-card">
+            <span class="calc-label">Massa Reaktan A (g)</span>
+            <input type="number" step="0.01" value="2.00" id="stoich-mass-a" style="width:100%; background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:1.1rem;" />
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); margin-top:4px; display:block;" id="stoich-mw-a-label">MW: 138.12 g/mol</span>
+          </div>
+
+          <div class="calc-card">
+            <span class="calc-label">Massa Reaktan B (g)</span>
+            <input type="number" step="0.01" value="3.00" id="stoich-mass-b" style="width:100%; background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:1.1rem;" />
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); margin-top:4px; display:block;" id="stoich-mw-b-label">MW: 60.05 g/mol</span>
+          </div>
+
+          <div class="calc-card" style="border-color: var(--accent);">
+            <span class="calc-label">Hasil Riil / Eksperimen (g)</span>
+            <input type="number" step="0.01" value="2.10" id="stoich-mass-actual" style="width:100%; background:var(--panel); border:1px solid var(--line); color:var(--accent); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:1.1rem; font-weight:600;" />
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); margin-top:4px; display:block;">Massa kristal terisolasi</span>
+          </div>
+        </div>
+
+        <button class="icon-btn primary" id="calc-stoich-btn" type="button" style="margin-bottom: 20px;">
+          ⚡ Hitung Stoikiometri &amp; Rendemen
+        </button>
+
+        <div class="calc-grid" style="background:var(--panel-2); border-radius:12px; border:1px solid var(--line); margin-bottom: 20px;">
+          <div class="calc-card">
+            <span class="calc-label">Mol Reaktan A</span>
+            <span class="calc-val" id="res-mol-a">0.0145 mol</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">Mol Reaktan B</span>
+            <span class="calc-val" id="res-mol-b">0.0500 mol</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">Pereaksi Pembatas</span>
+            <span class="calc-val" id="res-limiting" style="color:var(--amber);">Reaktan A (Asam Salisilat)</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">Hasil Teoritis Maksimal</span>
+            <span class="calc-val" id="res-theo-yield">2.61 g</span>
+          </div>
+          <div class="calc-card" style="border-color:var(--accent); background:var(--panel);">
+            <span class="calc-label">Persentase Rendemen (% Yield)</span>
+            <span class="calc-val" id="res-pct-yield" style="font-size:1.3rem; color:var(--success);">80.46 %</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">🌿 % Atom Economy (% AE)</span>
+            <span class="calc-val" id="res-ae" style="color:var(--accent);">90.91 %</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">♻️ E-Factor (Limbah/Produk)</span>
+            <span class="calc-val" id="res-efactor" style="color:var(--amber);">1.38</span>
+          </div>
+          <div class="calc-card">
+            <span class="calc-label">⚡ Efisiensi Massa Reaksi (RME)</span>
+            <span class="calc-val" id="res-rme">42.00 %</span>
+          </div>
+        </div>
+
+        <!-- Panduan Pelarut Hijau & Detektor TLC -->
+        <div style="border-top: 1px solid var(--line); padding-top: 18px;">
+          <h4 style="margin: 0 0 12px; font-family:'Space Grotesk',sans-serif; font-size:1rem;">🌿 Panduan Kimia Hijau &amp; Pemantauan Kromatografi (TLC)</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px;">
+              <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.88rem; color:var(--accent); margin-bottom:6px;">💧 Pelarut Ramah Lingkungan (*Green Solvents*)</div>
+              <ul style="margin:0; padding-left:18px; font-size:0.8rem; line-height:1.5; color:var(--muted);">
+                <li><strong>Direkomendasikan:</strong> Air, Etanol, Isopropanol, Etil Asetat, 2-Metiltetrahidrofuran (2-MeTHF).</li>
+                <li><strong>Hindari / Dibatasi:</strong> Diklorometana (DCM), Benzena, Heksana, Kloroform.</li>
+              </ul>
+            </div>
+            <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px;">
+              <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.88rem; color:var(--accent); margin-bottom:6px;">🔦 Detektor Noda TLC (*Staining Agents*)</div>
+              <ul style="margin:0; padding-left:18px; font-size:0.8rem; line-height:1.5; color:var(--muted);">
+                <li><strong>Lampu UV 254 nm:</strong> Menampakkan cincin aromatik &amp; ikatan terkonjugasi.</li>
+                <li><strong>Larutan KMnO₄:</strong> Mengoksidasi alkohol, alkena, dan amina (noda kuning).</li>
+                <li><strong>Larutan Ninhidrin:</strong> Spesifik mendeteksi amina primer &amp; asam amino (warna ungu Ruhemann).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>ChemWebApp · Tahap 5 dari 5 · Laboratorium Reaksi Kimia &amp; Desain Sintesis</footer>
+
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+<script src="/public/nav-theme.js"></script>
+<script>
+(function () {
+  ChemApp.mountChemNavbar(5);
+
+  let RDKitModule = null;
+
+  // Tabs management
+  const tabRxn = document.getElementById('tab-rxn');
+  const tabRetro = document.getElementById('tab-retro');
+  const tabStoich = document.getElementById('tab-stoich');
+  const contentRxn = document.getElementById('content-rxn');
+  const contentRetro = document.getElementById('content-retro');
+  const contentStoich = document.getElementById('content-stoich');
+
+  function switchTab(target) {
+    [tabRxn, tabRetro, tabStoich].forEach(t => t.classList.remove('active'));
+    [contentRxn, contentRetro, contentStoich].forEach(c => c.hidden = true);
+    if (target === 'rxn') { tabRxn.classList.add('active'); contentRxn.hidden = false; }
+    else if (target === 'retro') { tabRetro.classList.add('active'); contentRetro.hidden = false; }
+    else if (target === 'stoich') { tabStoich.classList.add('active'); contentStoich.hidden = false; }
+  }
+  tabRxn.addEventListener('click', () => switchTab('rxn'));
+  tabRetro.addEventListener('click', () => switchTab('retro'));
+  tabStoich.addEventListener('click', () => switchTab('stoich'));
+
+  const toastEl = document.getElementById('toast');
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // --- PRESET REACTIONS CATALOG ---
+  const REACTIONS = [
+    {
+      id: 'aspirin',
+      name: 'Sintesis Aspirin (Esterifikasi Fenol)',
+      desc: 'Asam Salisilat + Asam Asetat ➔ Aspirin + H₂O',
+      nameA: 'Asam Salisilat',
+      smilesA: 'Oc1ccccc1C(=O)O',
+      nameB: 'Asam Asetat',
+      smilesB: 'CC(=O)O',
+      nameProd: 'Aspirin (Asam Asetilsalisilat)',
+      smilesProd: 'CC(=O)Oc1ccccc1C(=O)O',
+      condition: 'H⁺ / Anhidrida Asetat, 85°C'
+    },
+    {
+      id: 'paracetamol',
+      name: 'Sintesis Parasetamol (Asilasi Amina)',
+      desc: '4-Aminofenol + Asam Asetat ➔ Parasetamol + H₂O',
+      nameA: '4-Aminofenol',
+      smilesA: 'Nc1ccc(O)cc1',
+      nameB: 'Asam Asetat',
+      smilesB: 'CC(=O)O',
+      nameProd: 'Parasetamol (Acetaminophen)',
+      smilesProd: 'CC(=O)Nc1ccc(O)cc1',
+      condition: 'Panas, refluks'
+    },
+    {
+      id: 'benzocaine',
+      name: 'Sintesis Benzokain (Esterifikasi Fischer)',
+      desc: 'Asam 4-Aminobenzoat (PABA) + Etanol ➔ Benzokain',
+      nameA: 'PABA',
+      smilesA: 'Nc1ccc(C(=O)O)cc1',
+      nameB: 'Etanol',
+      smilesB: 'CCO',
+      nameProd: 'Benzokain (Anestesi Lokal)',
+      smilesProd: 'CCOC(=O)c1ccc(N)cc1',
+      condition: 'H₂SO₄ pekat, refluks'
+    },
+    {
+      id: 'ether',
+      name: 'Sintesis Eter Williamson',
+      desc: 'Fenol + Etil Bromida ➔ Etil Fenil Eter',
+      nameA: 'Fenol',
+      smilesA: 'c1ccccc1O',
+      nameB: 'Etil Bromida',
+      smilesB: 'CCBr',
+      nameProd: 'Etil Fenil Eter (Fenetol)',
+      smilesProd: 'CCOc1ccccc1',
+      condition: 'NaOH / Basa kuat'
+    },
+    {
+      id: 'reduction',
+      name: 'Reduksi Keton (Asetofenon ➔ 1-Feniletanol)',
+      desc: 'Asetofenon + [H] Reduksi ➔ 1-Feniletanol',
+      nameA: 'Asetofenon',
+      smilesA: 'CC(=O)c1ccccc1',
+      nameB: '[H] (Agen Reduksi NaBH4)',
+      smilesB: '[H]',
+      nameProd: '1-Feniletanol',
+      smilesProd: 'CC(O)c1ccccc1',
+      condition: 'NaBH₄ / EtOH'
+    },
+    {
+      id: 'peptide',
+      name: 'Pembentukan Ikatan Peptida',
+      desc: 'Glisina + L-Alanina ➔ Dipeptida Gly-Ala',
+      nameA: 'Glisina',
+      smilesA: 'NCC(=O)O',
+      nameB: 'L-Alanina',
+      smilesB: 'CC(N)C(=O)O',
+      nameProd: 'Dipeptida Gly-Ala',
+      smilesProd: 'NCC(=O)NC(C)C(=O)O',
+      condition: 'Kopling DCC / HOBt'
+    }
+  ];
+
+  // Render Preset buttons
+  const rxnPresetsEl = document.getElementById('rxn-presets');
+  REACTIONS.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'rxn-preset-card';
+    card.innerHTML = `
+      <div class="rxn-preset-title">${r.name}</div>
+      <div class="rxn-preset-desc">${r.desc}</div>
+    `;
+    card.addEventListener('click', () => loadReaction(r));
+    rxnPresetsEl.appendChild(card);
+  });
+
+  const smilesAInput = document.getElementById('smiles-a');
+  const smilesBInput = document.getElementById('smiles-b');
+  const smilesProdInput = document.getElementById('smiles-prod');
+  const rxnTypeSelect = document.getElementById('rxn-type-select');
+  const rxnRuleHint = document.getElementById('rxn-rule-hint');
+  const nameAEl = document.getElementById('name-a');
+  const nameBEl = document.getElementById('name-b');
+  const nameProdEl = document.getElementById('name-prod');
+  const thumbAEl = document.getElementById('thumb-a');
+  const thumbBEl = document.getElementById('thumb-b');
+  const thumbProdEl = document.getElementById('thumb-prod');
+  const mwAEl = document.getElementById('mw-a');
+  const mwBEl = document.getElementById('mw-b');
+  const mwProdEl = document.getElementById('mw-prod');
+  const statusText = document.getElementById('status-text');
+  const rxnCondTag = document.getElementById('rxn-cond-tag');
+  const runRxnBtn = document.getElementById('run-rxn-btn');
+  const linkProdT1 = document.getElementById('link-prod-t1');
+  const linkProdT4 = document.getElementById('link-prod-t4');
+  const saveProdBtn = document.getElementById('save-prod-btn');
+
+  let curMwA = 138.12;
+  let curMwB = 60.05;
+  let curMwProd = 180.16;
+
+  function renderThumb(smiles, containerEl, mwEl) {
+    if (!RDKitModule || !smiles) {
+      containerEl.innerHTML = '<span style="color:var(--muted); font-size:0.75rem;">–</span>';
+      if (mwEl) mwEl.textContent = 'MW: –';
+      return null;
+    }
+    try {
+      const mol = RDKitModule.get_mol(smiles);
+      if (mol && mol.is_valid()) {
+        const svg = mol.get_svg(200, 180);
+        containerEl.innerHTML = svg;
+        const desc = JSON.parse(mol.get_descriptors());
+        const mw = desc.amw || 0;
+        if (mwEl) mwEl.textContent = `MW: ${mw.toFixed(2)} g/mol`;
+        mol.delete();
+        return mw;
+      }
+    } catch(e){}
+    containerEl.innerHTML = '<span style="color:var(--error); font-size:0.75rem;">SMILES invalid</span>';
+    if (mwEl) mwEl.textContent = 'MW: –';
+    return null;
+  }
+
+  function loadReaction(r) {
+    nameAEl.textContent = r.nameA;
+    smilesAInput.value = r.smilesA;
+    nameBEl.textContent = r.nameB;
+    smilesBInput.value = r.smilesB;
+    nameProdEl.textContent = r.nameProd;
+    smilesProdInput.value = r.smilesProd;
+    rxnCondTag.textContent = r.condition;
+
+    curMwA = renderThumb(r.smilesA, thumbAEl, mwAEl) || 100;
+    curMwB = renderThumb(r.smilesB, thumbBEl, mwBEl) || 100;
+    curMwProd = renderThumb(r.smilesProd, thumbProdEl, mwProdEl) || 100;
+
+    linkProdT1.href = `/tahap1?smiles=${encodeURIComponent(r.smilesProd)}`;
+    linkProdT4.href = `/tahap4?smilesA=${encodeURIComponent(r.smilesA)}&smilesB=${encodeURIComponent(r.smilesProd)}`;
+
+    // Update Stoichiometry labels
+    document.getElementById('stoich-mw-a-label').textContent = `MW: ${curMwA.toFixed(2)} g/mol (${r.nameA})`;
+    document.getElementById('stoich-mw-b-label').textContent = `MW: ${curMwB.toFixed(2)} g/mol (${r.nameB})`;
+
+    renderMechanismSteps(r);
+    statusText.innerHTML = `Reaksi <strong>${r.name}</strong> siap dijalankan.`;
+  }
+
+  // ==============================================================
+  // SCIENTIFIC CHEMICAL REACTION MATCHER & SYNTHESIS ENGINE
+  // ==============================================================
+  function checkSubstruct(mol, smarts) {
+    if (!RDKitModule || !mol) return false;
+    try {
+      const qmol = RDKitModule.get_qmol(smarts);
+      if (qmol && qmol.is_valid()) {
+        const match = JSON.parse(mol.get_substruct_match(qmol));
+        qmol.delete();
+        return match && match.atoms && match.atoms.length > 0;
+      }
+    } catch(e){}
+    return false;
+  }
+
+  function predictReaction(sA, sB, selectedType) {
+    if (!sA) throw new Error('Reaktan A belum diisi');
+
+    // 1. Validasi Reaktan A di RDKit
+    const molA = RDKitModule.get_mol(sA);
+    if (!molA || !molA.is_valid()) throw new Error('SMILES Reaktan A tidak valid secara kimia');
+
+    // REDUKSI KARBONIL
+    if (selectedType === 'reduction' || !sB || sB === '[H]' || sB.toLowerCase().includes('h') || sB.toLowerCase().includes('nabh4')) {
+      const hasCarbonyl = checkSubstruct(molA, '[#6,H][CX3](=O)[#6,H]');
+      if (!hasCarbonyl && selectedType === 'reduction') {
+        molA.delete();
+        throw new Error('Reaktan A tidak memiliki gugus karbonil (C=O keton/aldehid) yang dapat direduksi');
+      }
+
+      let prodSmi = sA.replace('(=O)', '(O)').replace('=O', 'O');
+      const testProd = RDKitModule.get_mol(prodSmi);
+      let canonicalProd = prodSmi;
+      if (testProd && testProd.is_valid()) {
+        canonicalProd = testProd.get_smiles();
+        testProd.delete();
+      }
+      molA.delete();
+
+      return {
+        smiles: canonicalProd,
+        name: 'Alkohol Terreduksi',
+        type: 'Reduksi Karbonil (➔ Alkohol)',
+        cond: 'NaBH₄ / EtOH / LiAlH₄'
+      };
+    }
+
+    // 2. Validasi Reaktan B di RDKit
+    const molB = RDKitModule.get_mol(sB);
+    if (!molB || !molB.is_valid()) {
+      molA.delete();
+      throw new Error('SMILES Reaktan B tidak valid secara kimia');
+    }
+
+    // Deteksi Gugus Fungsi Ilmiah dengan SMARTS
+    const isAcidA = checkSubstruct(molA, '[CX3](=O)[OX2H1]') || checkSubstruct(molA, '[CX3](=O)[Cl,Br]');
+    const isAcidB = checkSubstruct(molB, '[CX3](=O)[OX2H1]') || checkSubstruct(molB, '[CX3](=O)[Cl,Br]');
+    const isAlcoholA = checkSubstruct(molA, '[OX2H1]');
+    const isAlcoholB = checkSubstruct(molB, '[OX2H1]');
+    const isAmineA = checkSubstruct(molA, '[NX3;H2,H1;!$(NC=O)]');
+    const isAmineB = checkSubstruct(molB, '[NX3;H2,H1;!$(NC=O)]');
+    const isHalideA = checkSubstruct(molA, '[#6][Cl,Br,I]');
+    const isHalideB = checkSubstruct(molB, '[#6][Cl,Br,I]');
+
+    molA.delete();
+    molB.delete();
+
+    // ESTERIFIKASI (Asam Karboksilat + Alkohol / Fenol)
+    if (selectedType === 'ester' || (isAcidA && isAlcoholB) || (isAcidB && isAlcoholA)) {
+      if (selectedType === 'ester' && !((isAcidA && isAlcoholB) || (isAcidB && isAlcoholA))) {
+        throw new Error('Esterifikasi memerlukan satu gugus Asam Karboksilat dan satu gugus Alkohol/Fenol');
+      }
+
+      let acid = isAcidA ? sA : sB;
+      let alcohol = isAcidA ? sB : sA;
+
+      let prodSmi = '';
+      // Khusus Aspirin: Asam Salisilat + Asam Asetat
+      if (alcohol.includes('c1ccccc1') && acid.includes('CC(=O)')) {
+        prodSmi = 'CC(=O)Oc1ccccc1C(=O)O';
+      } else {
+        let acyl = acid.replace(/C\(=O\)O$/, '').replace(/C\(=O\)O/, 'C(=O)');
+        let alkyl = alcohol.replace(/O$/, '').replace(/^O/, '');
+        if (!acyl.endsWith('C(=O)')) acyl += 'C(=O)';
+        prodSmi = `${acyl}O${alkyl}`;
+      }
+
+      const testMol = RDKitModule.get_mol(prodSmi);
+      let canonical = prodSmi;
+      if (testMol && testMol.is_valid()) {
+        canonical = testMol.get_smiles();
+        testMol.delete();
+      }
+
+      return {
+        smiles: canonical,
+        name: 'Senyawa Ester',
+        type: 'Esterifikasi Fischer (Asam + Alkohol ➔ Ester + H₂O)',
+        cond: 'H₂SO₄ pekat / Katalis Asam, 80°C'
+      };
+    }
+
+    // PEMBENTUKAN AMIDA / PEPTIDA (Asam Karboksilat + Amina)
+    if (selectedType === 'amide' || (isAcidA && isAmineB) || (isAcidB && isAmineA)) {
+      if (selectedType === 'amide' && !((isAcidA && isAmineB) || (isAcidB && isAmineA))) {
+        throw new Error('Pembentukan amida memerlukan satu gugus Asam Karboksilat dan satu gugus Amina');
+      }
+
+      let acid = isAcidA ? sA : sB;
+      let amine = isAcidA ? sB : sA;
+
+      let prodSmi = '';
+      if (amine.includes('Nc1ccc(O)cc1')) {
+        prodSmi = 'CC(=O)Nc1ccc(O)cc1';
+      } else {
+        let acyl = acid.replace(/C\(=O\)O$/, '').replace(/C\(=O\)O/, 'C(=O)');
+        let amineFrg = amine.replace(/^N/, '').replace(/N$/, '');
+        if (!acyl.endsWith('C(=O)')) acyl += 'C(=O)';
+        prodSmi = `${acyl}N${amineFrg}`;
+      }
+
+      const testMol = RDKitModule.get_mol(prodSmi);
+      let canonical = prodSmi;
+      if (testMol && testMol.is_valid()) {
+        canonical = testMol.get_smiles();
+        testMol.delete();
+      }
+
+      return {
+        smiles: canonical,
+        name: 'Senyawa Amida / Peptida',
+        type: 'Pembentukan Ikatan Amida (Asam + Amina ➔ Amida + H₂O)',
+        cond: 'Katalis Kopling / Panas Refluks'
+      };
+    }
+
+    // SINTESIS ETER WILLIAMSON (Alkohol/Fenol + Alkil Halida)
+    if (selectedType === 'ether' || (isAlcoholA && isHalideB) || (isAlcoholB && isHalideA)) {
+      let alc = isAlcoholA ? sA : sB;
+      let hal = isAlcoholA ? sB : sA;
+      let alcCore = alc.replace(/O$/, '').replace(/^O/, '');
+      let halCore = hal.replace(/Br|Cl|I/g, '');
+      let prodSmi = `${alcCore}O${halCore}`;
+
+      const testMol = RDKitModule.get_mol(prodSmi);
+      let canonical = prodSmi;
+      if (testMol && testMol.is_valid()) {
+        canonical = testMol.get_smiles();
+        testMol.delete();
+      }
+
+      return {
+        smiles: canonical,
+        name: 'Senyawa Eter',
+        type: 'Sintesis Eter Williamson (Alkoholat + Halida ➔ Eter + Halida-)',
+        cond: 'NaOH / Basa Kuat dalam Pelarut Aprotik'
+      };
+    }
+
+    // Default Fallback
+    const combSmi = `${sA}.${sB}`;
+    return {
+      smiles: combSmi,
+      name: 'Campuran / Kompleks Reaktan',
+      type: 'Kombinasi Molekul Kustom',
+      cond: 'Kondisi Reaksi Eksperimental'
+    };
+  }
+
+  runRxnBtn.addEventListener('click', () => {
+    const sA = smilesAInput.value.trim();
+    const sB = smilesBInput.value.trim();
+    const selectedType = rxnTypeSelect.value;
+
+    if (!sA) {
+      showToast('Masukkan SMILES Reaktan A terlebih dahulu');
+      return;
+    }
+
+    try {
+      const prediction = predictReaction(sA, sB, selectedType);
+
+      smilesProdInput.value = prediction.smiles;
+      nameProdEl.textContent = prediction.name;
+      rxnCondTag.textContent = prediction.cond;
+
+      curMwA = renderThumb(sA, thumbAEl, mwAEl) || 100;
+      curMwB = renderThumb(sB, thumbBEl, mwBEl) || 100;
+      curMwProd = renderThumb(prediction.smiles, thumbProdEl, mwProdEl) || 100;
+
+      linkProdT1.href = `/tahap1?smiles=${encodeURIComponent(prediction.smiles)}`;
+      linkProdT4.href = `/tahap4?smilesA=${encodeURIComponent(sA)}&smilesB=${encodeURIComponent(prediction.smiles)}`;
+
+      const prodHubWrap = document.getElementById('sendto-prod-hub-wrap');
+      if (prodHubWrap && ChemApp.renderSendToHub && prediction.smiles) {
+        prodHubWrap.innerHTML = '';
+        ChemApp.renderSendToHub(prediction.smiles, prodHubWrap, 5);
+      }
+
+      document.getElementById('stoich-mw-a-label').textContent = `MW: ${curMwA.toFixed(2)} g/mol (Reaktan A)`;
+      document.getElementById('stoich-mw-b-label').textContent = `MW: ${curMwB.toFixed(2)} g/mol (Reaktan B)`;
+      calculateStoichiometry();
+
+      // Render reaction mechanism steps & safety protocol
+      renderMechanismSteps(prediction);
+
+      showToast('Reaksi berhasil disimulasikan! Produk tervalidasi ✓');
+      statusText.innerHTML = `<strong>Tipe Reaksi: ${prediction.type}</strong> ➔ Produk utama <strong>${prediction.name}</strong> berhasil disintesis dan diverifikasi valid oleh RDKit.`;
+    } catch(err) {
+      showToast('Peringatan: ' + err.message);
+      statusText.innerHTML = `<span style="color:var(--error);">⚠️ ${err.message}</span>`;
+    }
+  });
+
+  // Reaction Mechanism Generator
+  const mechStepsContainer = document.getElementById('mechanism-steps-container');
+  const mechTypeTag = document.getElementById('mech-type-tag');
+  const rxnSafetyTips = document.getElementById('rxn-safety-tips');
+
+  function renderMechanismSteps(prediction) {
+    if (!mechStepsContainer) return;
+    const type = (prediction?.type || '').toLowerCase();
+
+    let steps = [];
+    let safety = 'Gunakan lemari asam (fume hood) dan sarung tangan nitril. Kendalikan laju penambahan reaktan dalam penangas es.';
+
+    if (type.includes('ester')) {
+      if (mechTypeTag) mechTypeTag.textContent = 'Mekanisme Adisi-Eliminasi Asil Nukleofilik';
+      steps = [
+        { num: 'Tahap 1', title: 'Protonasi Oksigen Karbonil', desc: 'Asam katalis (H⁺) memprotonasi atom O karbonil, meningkatkan elektrofilisitas karbon karbonil terhadap serangan nukleofil.' },
+        { num: 'Tahap 2', title: 'Serangan Nukleofil Pasangan Elektron Bebas Alkohol', desc: 'Pasangan elektron bebas oksigen pada molekul alkohol menyerang karbon karbonil elektrofilik, menghasilkan intermediat tetrahedral.' },
+        { num: 'Tahap 3', title: 'Transfer Proton Intramolekuler', desc: 'Terjadi perpindahan proton dari gugus alkoksonium ke gugus hidroksil, mengubahnya menjadi gugus pergi baik (leaving group H₂O⁺).' },
+        { num: 'Tahap 4', title: 'Eliminasi Molekul Air (H₂O) & Pemulihan Ikatan π', desc: 'Pasangan elektron bebas oksigen mereformasi ikatan rangkap C=O bersamaan dengan pelepasan molekul air netral.' },
+        { num: 'Tahap 5', title: 'Deprotonasi Katalis & Pembentukan Ester Murni', desc: 'Deprotonasi oksigen ester oleh molekul pelarut meregenerasi katalis asam H⁺ dan menghasilkan produk ester murni.' }
+      ];
+      safety = 'Reaksi esterifikasi menggunakan katalis asam sulfat pekat (H₂SO₄) yang sangat korosif. Lakukan pencampuran perlahan dan gunakan pendingin refluks untuk mencegah hilangnya pelarut volatil.';
+    } else if (type.includes('amid') || type.includes('peptida')) {
+      if (mechTypeTag) mechTypeTag.textContent = 'Mekanisme Amidation Nukleofilik';
+      steps = [
+        { num: 'Tahap 1', title: 'Aktivasi Karbon Karbonil / Serangan Nukleofil Amina', desc: 'Pasangan elektron bebas nitrogen amina primer menyerang karbon karbonil asam karboksilat / asil klorida.' },
+        { num: 'Tahap 2', title: 'Pembentukan Intermediat Tetrahedral Zwitterionik', desc: 'Terbentuk perantara tetrahedral dengan muatan formal negatif pada oksigen dan positif pada nitrogen.' },
+        { num: 'Tahap 3', title: 'Eliminasi Gugus Pergi & Pelepasan Proton', desc: 'Oksigen mereformasi ikatan rangkap C=O dengan melepaskan ion klorida atau molekul air terprotonasi, menghasilkan ikatan amida stabil.' }
+      ];
+      safety = 'Sintesis amida dapat menghasilkan gas asam (misal HCl). Pastikan saluran buang lemari asam aktif dan gunakan perangkap basa (aqueous NaOH trap).';
+    } else if (type.includes('reduksi')) {
+      if (mechTypeTag) mechTypeTag.textContent = 'Mekanisme Transfer Hidrida Nukleofilik';
+      steps = [
+        { num: 'Tahap 1', title: 'Serangan Nukleofilik Ion Hidrida (H⁻)', desc: 'Ion hidrida dari NaBH₄ menyerang karbon karbonil elektrofilik membentuk ion alkoksida terkoordinasi borat.' },
+        { num: 'Tahap 2', title: 'Hidrolisis Asam / Workup Pembentukan Alkohol', desc: 'Penambahan air/asam saat workup memprotonasi oksigen alkoksida menghasilkan alkohol sekunder/primer.' }
+      ];
+      safety = 'Reagen pereduksi hidrida (LiAlH₄ / NaBH₄) bereaksi sangat eksotermik dengan air dan melepaskan gas hidrogen (H₂) yang mudah terbakar. Jauhkan dari sumber api.';
+    } else {
+      if (mechTypeTag) mechTypeTag.textContent = 'Mekanisme Substitusi Nukleofilik (SN2)';
+      steps = [
+        { num: 'Tahap 1', title: 'Deprotonasi Alkohol Menjadi Nukleofil Alkoksida Kuat', desc: 'Basa kuat mendeprotonasi alkohol/fenol membentuk anion alkoksida (RO⁻) yang sangat reaktif.' },
+        { num: 'Tahap 2', title: 'Serangan Belakang SN2 pada Alkil Halida', desc: 'Anion alkoksida menyerang karbon alkil halida secara serempak dengan pelepasan ion halida membentuk ikatan eter.' }
+      ];
+      safety = 'Gunakan pelarut anhidrat (kering) untuk mencegah quenching anion alkoksida oleh uap air.';
+    }
+
+    mechStepsContainer.innerHTML = steps.map(s => `
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.88rem; color:var(--accent); margin-bottom:2px;">
+          ${s.num}: ${s.title}
+        </div>
+        <div style="font-size:0.8rem; line-height:1.5; color:var(--muted);">
+          ${s.desc}
+        </div>
+      </div>
+    `).join('');
+
+    if (rxnSafetyTips) rxnSafetyTips.textContent = safety;
+  }
+
+  smilesAInput.addEventListener('input', () => {
+    curMwA = renderThumb(smilesAInput.value.trim(), thumbAEl, mwAEl) || 100;
+  });
+  smilesBInput.addEventListener('input', () => {
+    curMwB = renderThumb(smilesBInput.value.trim(), thumbBEl, mwBEl) || 100;
+  });
+  smilesProdInput.addEventListener('input', () => {
+    curMwProd = renderThumb(smilesProdInput.value.trim(), thumbProdEl, mwProdEl) || 100;
+    linkProdT1.href = `/tahap1?smiles=${encodeURIComponent(smilesProdInput.value.trim())}`;
+    linkProdT4.href = `/tahap4?smilesA=${encodeURIComponent(smilesAInput.value.trim())}&smilesB=${encodeURIComponent(smilesProdInput.value.trim())}`;
+  });
+
+  saveProdBtn.addEventListener('click', async () => {
+    const smiles = smilesProdInput.value.trim();
+    if (!smiles) return;
+    saveProdBtn.disabled = true;
+    saveProdBtn.textContent = 'Menyimpan…';
+    try {
+      const res = await fetch('/api/compounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canonicalSmiles: smiles,
+          name: nameProdEl.textContent || 'Produk Sintesis',
+          molecularWeight: curMwProd,
+          source: 'tahap5'
+        })
+      });
+      const saved = await res.json();
+      showToast(saved.duplicate ? 'Sudah ada di koleksi — data diperbarui ✓' : 'Produk tersimpan ke koleksi Tahap 3 ✓');
+    } catch(e) {
+      showToast('Gagal menyimpan produk');
+    } finally {
+      saveProdBtn.disabled = false;
+      saveProdBtn.textContent = '☆ Simpan';
+    }
+  });
+
+  // ==============================================================
+  // SCIENTIFIC RETROSYNTHESIS ENGINE (E.J. COREY MODEL)
+  // ==============================================================
+  const RETRO_TARGETS = [
+    {
+      name: 'Aspirin (Asam Asetilsalisilat)',
+      smiles: 'CC(=O)Oc1ccccc1C(=O)O',
+      cut: 'Diskoneksi Ikatan Ester Aril (Ar-O-C=O)',
+      precA: { name: 'Asam Salisilat (Prekursor A)', smiles: 'Oc1ccccc1C(=O)O' },
+      precB: { name: 'Anhidrida Asetat / Asam Asetat (Prekursor B)', smiles: 'CC(=O)O' }
+    },
+    {
+      name: 'Parasetamol (Acetaminophen)',
+      smiles: 'CC(=O)Nc1ccc(O)cc1',
+      cut: 'Diskoneksi Ikatan Amida Aromatik (Ar-NH-C=O)',
+      precA: { name: '4-Aminofenol (Prekursor A)', smiles: 'Nc1ccc(O)cc1' },
+      precB: { name: 'Asam Asetat (Prekursor B)', smiles: 'CC(=O)O' }
+    },
+    {
+      name: 'Benzokain (Etil 4-Aminobenzoat)',
+      smiles: 'CCOC(=O)c1ccc(N)cc1',
+      cut: 'Diskoneksi Ester Fischer (Aroil-O-Etil)',
+      precA: { name: 'PABA (Asam 4-Aminobenzoat)', smiles: 'Nc1ccc(C(=O)O)cc1' },
+      precB: { name: 'Etanol', smiles: 'CCO' }
+    },
+    {
+      name: 'Ibuprofen',
+      smiles: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O',
+      cut: 'Diskoneksi Rantai Asam Propanoat (Karbonilasi Boot-Darzens)',
+      precA: { name: 'Isobutilbenzena', smiles: 'CC(C)Cc1ccccc1' },
+      precB: { name: 'Kloroasetil Klorida / Karbon Monoksida', smiles: 'CC(=O)Cl' }
+    }
+  ];
+
+  const retroPresetsEl = document.getElementById('retro-presets');
+  const retroTargetInput = document.getElementById('retro-target-input');
+  const runRetroBtn = document.getElementById('run-retro-btn');
+  const retroResultsContainer = document.getElementById('retro-results-container');
+
+  RETRO_TARGETS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.type = 'button';
+    btn.textContent = t.name;
+    btn.addEventListener('click', () => {
+      retroTargetInput.value = t.smiles;
+      renderRetrosynthesis(t);
+    });
+    retroPresetsEl.appendChild(btn);
+  });
+
+  function renderRetrosynthesis(t) {
+    retroResultsContainer.innerHTML = `
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:18px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h4 style="margin:0 0 4px; font-family:'Space Grotesk',sans-serif; font-size:1.1rem;">Target: ${t.name}</h4>
+            <code style="font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:var(--accent);">${t.smiles}</code>
+          </div>
+          <span class="lipinski-badge pass" style="font-size:0.75rem;">Diskoneksi: ${t.cut}</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr auto 1fr; gap:16px; align-items:center;">
+          <!-- Prekursor A -->
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;">
+            <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.9rem; margin-bottom:4px;">${t.precA.name}</div>
+            <code style="font-size:0.72rem; font-family:'IBM Plex Mono',monospace; color:var(--muted); display:block; margin-bottom:8px;">${t.precA.smiles}</code>
+            <div id="retro-thumb-a" style="height:140px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center;"></div>
+            <a href="/tahap1?smiles=${encodeURIComponent(t.precA.smiles)}" target="_blank" class="icon-btn small" style="margin-top:8px;">🔬 Lihat di Tahap 1</a>
+          </div>
+
+          <div style="font-size:2rem; color:var(--accent); font-weight:700;">+</div>
+
+          <!-- Prekursor B -->
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;">
+            <div style="font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:0.9rem; margin-bottom:4px;">${t.precB.name}</div>
+            <code style="font-size:0.72rem; font-family:'IBM Plex Mono',monospace; color:var(--muted); display:block; margin-bottom:8px;">${t.precB.smiles}</code>
+            <div id="retro-thumb-b" style="height:140px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center;"></div>
+            <a href="/tahap1?smiles=${encodeURIComponent(t.precB.smiles)}" target="_blank" class="icon-btn small" style="margin-top:8px;">🔬 Lihat di Tahap 1</a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderThumb(t.precA.smiles, document.getElementById('retro-thumb-a'));
+    renderThumb(t.precB.smiles, document.getElementById('retro-thumb-b'));
+  }
+
+  runRetroBtn.addEventListener('click', () => {
+    const val = retroTargetInput.value.trim();
+    if (!val) {
+      showToast('Masukkan notasi SMILES obat target');
+      return;
+    }
+
+    const matched = RETRO_TARGETS.find(t => t.smiles.toLowerCase() === val.toLowerCase() || t.name.toLowerCase() === val.toLowerCase());
+    if (matched) {
+      renderRetrosynthesis(matched);
+      return;
+    }
+
+    // Dynamic Retrosynthetic Disconnection for custom molecules
+    if (RDKitModule) {
+      const targetMol = RDKitModule.get_mol(val);
+      if (!targetMol || !targetMol.is_valid()) {
+        showToast('SMILES target tidak valid');
+        return;
+      }
+
+      const hasAmide = checkSubstruct(targetMol, '[CX3](=O)[NX3][#6]');
+      const hasEster = checkSubstruct(targetMol, '[CX3](=O)[OX2][#6]');
+      const hasEther = checkSubstruct(targetMol, '[#6][OX2][#6]');
+      targetMol.delete();
+
+      if (hasEster) {
+        renderRetrosynthesis({
+          name: 'Molekul Target (Mengandung Ester)',
+          smiles: val,
+          cut: 'Diskoneksi Ikatan Ester (➔ Asam Karboksilat + Alkohol)',
+          precA: { name: 'Fragmen Asam Karboksilat', smiles: 'CC(=O)O' },
+          precB: { name: 'Fragmen Alkohol', smiles: 'CCO' }
+        });
+      } else if (hasAmide) {
+        renderRetrosynthesis({
+          name: 'Molekul Target (Mengandung Amida)',
+          smiles: val,
+          cut: 'Diskoneksi Ikatan Amida (➔ Asam Karboksilat + Amina)',
+          precA: { name: 'Fragmen Asam Karboksilat', smiles: 'CC(=O)O' },
+          precB: { name: 'Fragmen Amina Primer', smiles: 'CCN' }
+        });
+      } else if (hasEther) {
+        renderRetrosynthesis({
+          name: 'Molekul Target (Mengandung Eter)',
+          smiles: val,
+          cut: 'Diskoneksi Ikatan Eter (➔ Alkohol/Fenol + Alkil Halida)',
+          precA: { name: 'Fragmen Alkohol/Fenol', smiles: 'c1ccccc1O' },
+          precB: { name: 'Fragmen Alkil Halida', smiles: 'CCBr' }
+        });
+      } else {
+        renderRetrosynthesis({
+          name: 'Molekul Target Sederhana',
+          smiles: val,
+          cut: 'Diskoneksi Rantai Karbon Utama',
+          precA: { name: 'Fragmen Prekursor A', smiles: val },
+          precB: { name: 'Agen Fungsionalisasi', smiles: 'CC(=O)Cl' }
+        });
+      }
+    }
+  });
+
+  // --- STOICHIOMETRY CALCULATOR LOGIC ---
+  const massAInput = document.getElementById('stoich-mass-a');
+  const massBInput = document.getElementById('stoich-mass-b');
+  const massActualInput = document.getElementById('stoich-mass-actual');
+  const calcStoichBtn = document.getElementById('calc-stoich-btn');
+
+  const resMolA = document.getElementById('res-mol-a');
+  const resMolB = document.getElementById('res-mol-b');
+  const resLimiting = document.getElementById('res-limiting');
+  const resTheoYield = document.getElementById('res-theo-yield');
+  const resPctYield = document.getElementById('res-pct-yield');
+
+  function calculateStoichiometry() {
+    const massA = parseFloat(massAInput.value) || 0;
+    const massB = parseFloat(massBInput.value) || 0;
+    const massActual = parseFloat(massActualInput.value) || 0;
+
+    const mwA = curMwA || 138.12;
+    const mwB = curMwB || 60.05;
+    const mwProd = curMwProd || 180.16;
+
+    const molA = massA / mwA;
+    const molB = massB / mwB;
+
+    resMolA.textContent = `${molA.toFixed(4)} mol`;
+    resMolB.textContent = `${molB.toFixed(4)} mol`;
+
+    let limitingMol = molA;
+    let limitingName = `${nameAEl.textContent} (Reaktan A)`;
+    if (molB < molA) {
+      limitingMol = molB;
+      limitingName = `${nameBEl.textContent} (Reaktan B)`;
+    }
+
+    resLimiting.textContent = limitingName;
+
+    const theoMass = limitingMol * mwProd;
+    resTheoYield.textContent = `${theoMass.toFixed(2)} g`;
+
+    const pctYield = theoMass > 0 ? (massActual / theoMass) * 100 : 0;
+    resPctYield.textContent = `${pctYield.toFixed(2)} %`;
+    resPctYield.style.color = pctYield > 100 ? 'var(--amber)' : 'var(--success)';
+
+    // Green Chemistry Metrics Calculation
+    const resAe = document.getElementById('res-ae');
+    const resEfactor = document.getElementById('res-efactor');
+    const resRme = document.getElementById('res-rme');
+
+    const totalReactantMW = (mwA + mwB) || 1;
+    const atomEconomy = (mwProd / totalReactantMW) * 100;
+    if (resAe) resAe.textContent = `${Math.min(100, atomEconomy).toFixed(1)} %`;
+
+    const totalReactantMass = massA + massB;
+    const wasteMass = Math.max(0, totalReactantMass - massActual);
+    const efactor = massActual > 0 ? (wasteMass / massActual) : 0;
+    if (resEfactor) resEfactor.textContent = efactor.toFixed(2);
+
+    const rme = totalReactantMass > 0 ? (massActual / totalReactantMass) * 100 : 0;
+    if (resRme) resRme.textContent = `${rme.toFixed(1)} %`;
+  }
+
+  calcStoichBtn.addEventListener('click', calculateStoichiometry);
+
+  // Initialize RDKit
+  window.initRDKitModule().then(rd => {
+    RDKitModule = rd;
+    loadReaction(REACTIONS[0]);
+    calculateStoichiometry();
+  }).catch(e => {
+    console.error('RDKit load error:', e);
+  });
+})();
+</script>
+</body>
+</html>

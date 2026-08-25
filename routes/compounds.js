@@ -63,6 +63,66 @@ router.post('/', async (req, res) => {
   }
 });
 
+// POST /api/compounds/batch — simpan jamak senyawa sekaligus (dengan dedup)
+router.post('/batch', async (req, res) => {
+  try {
+    const items = Array.isArray(req.body) ? req.body : (req.body.items || []);
+    if (!items.length) {
+      return res.status(400).json({ error: 'Array items tidak boleh kosong' });
+    }
+
+    const results = { inserted: 0, updated: 0, errors: 0 };
+    for (const raw of items) {
+      if (!raw.canonicalSmiles) {
+        results.errors++;
+        continue;
+      }
+      const picked = pickBody(raw);
+      const existing = await Compound.findOne({ canonicalSmiles: raw.canonicalSmiles });
+      if (existing) {
+        const update = { ...picked };
+        if (update.tags && existing.tags && existing.tags.length) {
+          // Gabungkan tags jika ada
+          const combinedTags = Array.from(new Set([...existing.tags, ...update.tags]));
+          update.tags = combinedTags;
+        } else {
+          delete update.tags;
+        }
+        if (!update.notes) delete update.notes;
+
+        for (const key of Object.keys(update)) {
+          const val = update[key];
+          const isEmpty = val === null || val === undefined || val === '' ||
+            (Array.isArray(val) && val.length === 0);
+          if (isEmpty && existing[key] !== undefined && existing[key] !== null && existing[key] !== '') {
+            delete update[key];
+          }
+        }
+        Object.assign(existing, update);
+        await existing.save();
+        results.updated++;
+      } else {
+        await Compound.create(picked);
+        results.inserted++;
+      }
+    }
+
+    res.json({ ok: true, ...results });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memproses batch import', detail: err.message });
+  }
+});
+
+// GET /api/compounds/export/all — ambil semua data tanpa paginasi untuk kebutuhan ekspor (CSV/JSON/SDF)
+router.get('/export/all', async (req, res) => {
+  try {
+    const items = await Compound.find({}).sort({ createdAt: -1 });
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengambil data untuk ekspor', detail: err.message });
+  }
+});
+
 // GET /api/compounds — list + filter (tag, cari nama/formula/smiles) + pagination + sort
 router.get('/', async (req, res) => {
   try {

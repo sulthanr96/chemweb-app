@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tahap 6 — Studio Docking 3D, Toksikologi ADMET &amp; Kromatografi | ChemWebApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/nav-theme.css">
+<!-- 3Dmol.js for Protein-Ligand 3D Visualization -->
+<script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(var(--line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+  header {
+    text-align: center;
+    padding: 40px 20px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    margin: 0 0 10px;
+    font-weight: 700;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 auto;
+    max-width: 720px;
+  }
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Mode Switcher Tabs */
+  .mode-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .mode-tab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mode-tab:hover {
+    color: var(--ink);
+    border-color: var(--accent-dim);
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 4px 12px var(--accent-dim);
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .panel-head .label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+
+  /* Preset Pills */
+  .preset-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .preset-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .preset-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* 3D Docking Viewer */
+  #docking-3d-wrap {
+    width: 100%;
+    height: 480px;
+    position: relative;
+    background: #0f1412;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #docking-viewer {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Toxic Dials & Badges */
+  .tox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .tox-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .tox-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tox-status {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tox-safe { color: #38a169; }
+  .tox-warn { color: #d69e2e; }
+  .tox-danger { color: #e53e3e; }
+
+  /* Chromatogram & TLC canvas */
+  .chromato-wrap {
+    width: 100%;
+    height: 300px;
+    background: var(--panel-2);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tlc-plate-wrap {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel-2);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--line);
+  }
+  #tlc-plate-canvas {
+    background: #e2e8f0;
+    border-radius: 6px;
+    border: 2px solid #cbd5e0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  /* Buffer Table */
+  .calc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 14px;
+  }
+  .calc-table th, .calc-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+  .calc-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--panel-2);
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <div class="eyebrow">ChemWebApp — Tahap 6 / 6</div>
+  <h1>Studio Docking 3D, Toksikologi AI &amp; Kromatografi</h1>
+  <p>Visualisasi interaksi obat-reseptor 3D (*binding pocket*), prediksi toksisitas &amp; sitokrom P450 (*in silico*), simulator HPLC &amp; plat TLC, serta kalkulator analitik larutan/buffer laboratorium.</p>
+</header>
+
+<main>
+  <!-- Navigation Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-dock" type="button">🧬 1. Docking Ligan-Protein 3D</button>
+    <button class="mode-tab" id="tab-tox" type="button">☣️ 2. Toksikologi ADMET &amp; CYP450</button>
+    <button class="mode-tab" id="tab-chrom" type="button">📊 3. Simulator HPLC &amp; Plat TLC</button>
+    <button class="mode-tab" id="tab-buf" type="button">⚖️ 4. Kalkulator Larutan &amp; Buffer</button>
+    <button class="mode-tab" id="tab-pk" type="button">📈 5. Simulator Farmakokinetika In-Vivo</button>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODUL 1: MOLECULAR DOCKING & PROTEIN BINDING POCKET -->
+  <!-- ============================================================== -->
+  <div class="mode-section" id="section-dock">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">🧬 Studio Interaksi Reseptor Target (3D Active Pocket)</span>
+        <span class="tag">RCSB PDB &amp; 3Dmol.js</span>
+      </div>
+      <div style="padding: 20px;">
+        <div class="preset-row">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted);">Pilih Kompleks Obat:</span>
+          <button class="preset-btn active" type="button" data-pdb="1cx2" data-lig="Aspirin / Flurbiprofen" data-target="Siklooksigenase-2 (COX-2)">Enzim COX-2 (Antiinflamasi)</button>
+          <button class="preset-btn" type="button" data-pdb="3eml" data-lig="Kafein / ZM241385" data-target="Reseptor Adenosin A2A">Reseptor Adenosin A2A (Stimulan)</button>
+          <button class="preset-btn" type="button" data-pdb="6lu7" data-lig="Nirmatrelvir (Paxlovid)" data-target="SARS-CoV-2 Main Protease">Mpro SARS-CoV-2 (Antiviral)</button>
+          <button class="preset-btn" type="button" data-pdb="4dfr" data-lig="Metotreksat" data-target="Dihidrofolat Reduktase">Enzim DHFR (Antikanker)</button>
+          <button class="preset-btn" type="button" data-pdb="2rh1" data-lig="Salbutamol" data-target="Reseptor Adrenergik Beta-2">Reseptor Beta-2 (Bronkodilator)</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start;">
+          <!-- 3D Canvas -->
+          <div>
+            <div id="docking-3d-wrap">
+              <div id="docking-viewer"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted);">
+                🟡 Garis Kuning = Ikatan Hidrogen | Hijau = Molekul Obat Terikat
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="icon-btn small" id="dock-spin-btn" type="button">🌀 Putar Model</button>
+                <button class="icon-btn small" id="dock-reset-btn" type="button">⟲ Reset Sudut</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parameter Interaksi -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:18px;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; color:var(--accent); margin-bottom:4px;" id="dock-target-name">
+              Siklooksigenase-2 (COX-2)
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); margin-bottom:14px;" id="dock-pdb-code">
+              PDB ID: 1CX2 · Resolusi: 2.1 Å
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:12px; margin-bottom:12px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); text-transform:uppercase;">Estimasi Energi Bebas Pengikatan</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:#38a169;" id="dock-energy">
+                -8.4 kcal/mol
+              </div>
+              <div style="font-size:0.75rem; color:var(--muted);">Konstanta Inhibisi Prediksi (Ki): <strong id="dock-ki" style="color:var(--ink);">0.68 µM</strong></div>
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:12px; margin-bottom:12px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Residu Kunci Kantung Aktif</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;" id="dock-residues">
+                <span class="synonym-chip">Arg120</span>
+                <span class="synonym-chip">Tyr355</span>
+                <span class="synonym-chip">Ser530</span>
+                <span class="synonym-chip">Val523</span>
+              </div>
+            </div>
+
+            <div style="font-size:0.8rem; line-height:1.5; color:var(--muted);" id="dock-desc">
+              Molekul ligan menempati kantung katalitik hidrofobik COX-2 dan membentuk ikatan hidrogen kunci dengan residu Ser530 dan Arg120, menghambat konversi asam arakidonat menjadi prostaglandin.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODUL 2: TOKSIKOLOGI & METABOLISME AI (ADMET & CYP450) -->
+  <!-- ============================================================== -->
+  <div class="mode-section" id="section-tox" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">☣️ Profil Toksikologi Komputasi &amp; Inhibisi Sitokrom P450</span>
+        <span class="tag">In Silico Safety</span>
+      </div>
+      <div style="padding: 20px;">
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <input type="text" id="tox-smiles-input" value="CC(=O)Oc1ccccc1C(=O)O" placeholder="Ketik notasi SMILES senyawa yang ingin diuji toksisitasnya…" style="flex:1; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:10px 14px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:0.85rem;" />
+          <button class="icon-btn primary" id="run-tox-btn" type="button">Prediksi Toksisitas</button>
+        </div>
+
+        <h4 style="margin:0 0 10px; font-family:'Space Grotesk',sans-serif; font-size:0.95rem;">🚦 Dasbor Risiko Toksikologis (Toxicity Endpoints)</h4>
+        <div class="tox-grid">
+          <div class="tox-card">
+            <span class="tox-name">Hepatotoksisitas (Hati)</span>
+            <span class="tox-status tox-safe" id="tox-hep">🟢 Rendah / Aman</span>
+            <span style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Probabilitas toksik: 12%</span>
+          </div>
+          <div class="tox-card">
+            <span class="tox-name">Mutagenisitas (Ames Test)</span>
+            <span class="tox-status tox-safe" id="tox-ames">🟢 Negatif (Non-mutagenik)</span>
+            <span style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Risiko kerusakan DNA: 8%</span>
+          </div>
+          <div class="tox-card">
+            <span class="tox-name">Kardiotoksisitas (hERG)</span>
+            <span class="tox-status tox-safe" id="tox-herg">🟢 Aman (No Inhibition)</span>
+            <span style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Inhibisi kanal K+: 15%</span>
+          </div>
+          <div class="tox-card">
+            <span class="tox-name">Penetrasi Sawar Otak (BBB)</span>
+            <span class="tox-status tox-warn" id="tox-bbb">🟡 Penetrasi Rendah (BBB-)</span>
+            <span style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Aman untuk perifer / non-CNS</span>
+          </div>
+        </div>
+
+        <h4 style="margin:20px 0 10px; font-family:'Space Grotesk',sans-serif; font-size:0.95rem;">🧬 Profil Metabolisme Enzim Hati (Sitokrom P450)</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--accent);">CYP1A2</div>
+            <div style="font-size:0.85rem; margin-top:4px; color:#38a169;" id="cyp-1a2">Non-inhibitor</div>
+          </div>
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--accent);">CYP2C9</div>
+            <div style="font-size:0.85rem; margin-top:4px; color:#d69e2e;" id="cyp-2c9">Inhibitor Lemah</div>
+          </div>
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--accent);">CYP2C19</div>
+            <div style="font-size:0.85rem; margin-top:4px; color:#38a169;" id="cyp-2c19">Non-inhibitor</div>
+          </div>
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--accent);">CYP2D6</div>
+            <div style="font-size:0.85rem; margin-top:4px; color:#38a169;" id="cyp-2d6">Non-inhibitor</div>
+          </div>
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--accent);">CYP3A4</div>
+            <div style="font-size:0.85rem; margin-top:4px; color:#38a169;" id="cyp-3a4">Non-inhibitor</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODUL 3: SIMULATOR KROMATOGRAFI HPLC & PLAT TLC -->
+  <!-- ============================================================== -->
+  <div class="mode-section" id="section-chrom" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">📊 Simulator Kromatogram HPLC (High-Performance Liquid Chromatography)</span>
+        <span class="tag">Fasa Terbalik C18</span>
+      </div>
+      <div style="padding: 20px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">LogP Senyawa A (Kutub Lebih Polar):</label>
+            <input type="number" step="0.1" value="1.2" id="hplc-logp-a" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">LogP Senyawa B (Lebih Non-Polar):</label>
+            <input type="number" step="0.1" value="3.5" id="hplc-logp-b" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Laju Alir Pelarut (mL/min):</label>
+            <input type="number" step="0.1" value="1.0" id="hplc-flow" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+        </div>
+
+        <div class="chromato-wrap">
+          <canvas id="hplc-canvas" width="960" height="300" style="width:100%; height:100%;"></canvas>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); margin-top:8px; text-align:center;" id="hplc-summary">
+          Waktu Retensi: Puncak A (tR = 3.20 min) · Puncak B (tR = 7.45 min) · Resolusi (Rs) = 2.85 (Pemisahan Sempurna)
+        </div>
+      </div>
+    </div>
+
+    <!-- Plat Kromatografi Lapis Tipis (TLC) -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">🔦 Plat Kromatografi Lapis Tipis (TLC Plate Simulator)</span>
+        <button class="icon-btn small" id="tlc-uv-btn" type="button">🔦 Nyalakan Lampu UV 254 nm</button>
+      </div>
+      <div style="padding: 20px;">
+        <div class="tlc-plate-wrap">
+          <canvas id="tlc-plate-canvas" width="220" height="320"></canvas>
+          <div style="max-width: 440px; font-size: 0.88rem; line-height: 1.6;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.05rem; margin-bottom:8px; color:var(--accent);">Pemantauan Reaksi &amp; Pemisahan Plat TLC</div>
+            <p style="color:var(--muted); margin:0 0 10px;">
+              Plat silika gel fase normal ($SiO_2$). Senyawa yang lebih non-polar terelusi lebih cepat dengan eluen semi-polar (Heksana : Etil Asetat $3:1$), menghasilkan nilai $R_f$ yang lebih tinggi.
+            </p>
+            <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 14px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem;" id="tlc-rf-values">
+              • Spot A (Reaktan): Rf = 0.35<br/>
+              • Spot B (Produk Target): Rf = 0.72
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODUL 4: KALKULATOR LARUTAN & BUFFER LABORATORIUM -->
+  <!-- ============================================================== -->
+  <div class="mode-section" id="section-buf" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">⚖️ Kalkulator Pembuatan Larutan Stok &amp; Pengenceran Analitik</span>
+        <span class="tag">Lab Utilities</span>
+      </div>
+      <div style="padding: 20px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Massa Molar / MW (g/mol):</label>
+            <input type="number" step="0.01" value="58.44" id="sol-mw" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Konsentrasi Target (Molar / M):</label>
+            <input type="number" step="0.01" value="0.50" id="sol-conc" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Volume Labu Ukur (mL):</label>
+            <input type="number" step="1" value="250" id="sol-vol" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+        </div>
+
+        <button class="icon-btn primary" id="calc-sol-btn" type="button" style="margin-bottom: 16px;">
+          ⚡ Hitung Massa yang Harus Ditimbang
+        </button>
+
+        <div style="background:var(--panel-2); border:1px solid var(--accent); border-radius:10px; padding:14px 18px; font-size:0.92rem;" id="sol-result">
+          Timbang sebanyak <strong>7.31 g</strong> zat terlarut, larutkan dalam akuades secukupnya, lalu tambahkan akuades hingga volume tepat <strong>250 mL</strong> pada labu ukur.
+        </div>
+      </div>
+    </div>
+
+    <!-- Perancang Larutan Penyangga (Buffer Maker) -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">🧪 Perancang Resep Larutan Penyangga (Buffer Recipe Generator)</span>
+        <span class="tag">Biological Buffers</span>
+      </div>
+      <div style="padding: 20px;">
+        <table class="calc-table">
+          <thead>
+            <tr>
+              <th>Nama Larutan Penyangga</th>
+              <th>pH Target</th>
+              <th>Komposisi Garam &amp; Asam/Basa</th>
+              <th>Aplikasi Utama</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Phosphate Buffered Saline (PBS)</strong></td>
+              <td>7.40</td>
+              <td>NaCl (8.0 g) + KCl (0.2 g) + Na₂HPO₄ (1.44 g) + KH₂PO₄ (0.24 g) dalam 1 L</td>
+              <td>Kultur sel, uji biologis &amp; fisiologis tubuh</td>
+            </tr>
+            <tr>
+              <td><strong>Acetate Buffer</strong></td>
+              <td>4.50</td>
+              <td>Natrium Asetat (4.1 g) + Asam Asetat Glasial (2.8 mL) dalam 1 L</td>
+              <td>Uji disolusi tablet &amp; stabilitas asam</td>
+            </tr>
+            <tr>
+              <td><strong>Tris-HCl Buffer</strong></td>
+              <td>8.00</td>
+              <td>Tris Basa (12.1 g) + Titrasi HCl 1 M hingga pH 8.0 dalam 1 L</td>
+              <td>Elektroforesis DNA/Protein &amp; biologi molekuler</td>
+            </tr>
+            <tr>
+              <td><strong>Citrate Buffer</strong></td>
+              <td>5.00</td>
+              <td>Asam Sitrat (5.8 g) + Natrium Sitrat (14.1 g) dalam 1 L</td>
+              <td>Antigen retrieval &amp; formulasi farmasi</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODUL 5: SIMULATOR FARMAKOKINETIKA IN-VIVO (PK SIMULATOR) -->
+  <!-- ============================================================== -->
+  <div class="mode-section" id="section-pk" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">📈 Simulator Farmakokinetika Klinis (Profil Kadar Plasma In-Vivo &amp; Jendela Terapi)</span>
+        <span class="tag">Two-Compartment Oral Absorption</span>
+      </div>
+      <div style="padding: 20px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Dosis Obat (mg):</label>
+            <input type="number" step="50" value="500" id="pk-dose" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Regimen Frekuensi:</label>
+            <select id="pk-regimen" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;">
+              <option value="single">Dosis Tunggal (Single Dose)</option>
+              <option value="q8h" selected>Tiap 8 Jam (3x Sehari / q8h)</option>
+              <option value="q12h">Tiap 12 Jam (2x Sehari / q12h)</option>
+              <option value="q24h">Tiap 24 Jam (1x Sehari / q24h)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Waktu Paruh Eliminasi (t½ jam):</label>
+            <input type="number" step="0.5" value="4.0" id="pk-thalf" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px;">Volume Distribusi Vd (L):</label>
+            <input type="number" step="5" value="45" id="pk-vd" style="width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px; border-radius:6px; font-family:'IBM Plex Mono',monospace;" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start;">
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:16px; position:relative;">
+            <canvas id="pk-canvas" width="680" height="320" style="width:100%; height:100%;"></canvas>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted); margin-top:8px; text-align:center;">
+              🟩 Zona Hijau = Jendela Terapi Aman (MEC = 5.0 µg/mL s.d. MTC = 25.0 µg/mL). Kurva Biru = Konsentrasi Plasma (Cp).
+            </div>
+          </div>
+
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:18px;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.05rem; color:var(--accent); margin-bottom:12px;">
+              📊 Metrik Farmakokinetika
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:10px; margin-bottom:10px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Kadar Puncak (Cmax)</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:1.25rem; font-weight:700; color:var(--ink);" id="pk-cmax">12.4 µg/mL</div>
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:10px; margin-bottom:10px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Waktu Capai Puncak (Tmax)</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:1.25rem; font-weight:700; color:var(--ink);" id="pk-tmax">1.8 Jam</div>
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:10px; margin-bottom:10px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Total Paparan Obat (AUC 0-24h)</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:1.25rem; font-weight:700; color:var(--ink);" id="pk-auc">168.2 µg·h/mL</div>
+            </div>
+
+            <div style="border-top:1px solid var(--line); padding-top:10px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Status Keamanan Klinis</div>
+              <span class="lipinski-badge pass" id="pk-status" style="display:inline-block; font-size:0.8rem; padding:4px 8px;">✓ Dalam Jendela Terapi Optimal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>ChemWebApp · Tahap 6 dari 6 · Studio Interaksi Reseptor 3D, Toksikologi ADMET &amp; Kromatografi</footer>
+
+<script src="/public/nav-theme.js"></script>
+<script>
+(function () {
+  ChemApp.mountChemNavbar(6);
+
+  // Mode Switcher
+  const tabs = {
+    dock: { btn: document.getElementById('tab-dock'), sec: document.getElementById('section-dock') },
+    tox: { btn: document.getElementById('tab-tox'), sec: document.getElementById('section-tox') },
+    chrom: { btn: document.getElementById('tab-chrom'), sec: document.getElementById('section-chrom') },
+    buf: { btn: document.getElementById('tab-buf'), sec: document.getElementById('section-buf') },
+    pk: { btn: document.getElementById('tab-pk'), sec: document.getElementById('section-pk') },
+  };
+
+  Object.keys(tabs).forEach(k => {
+    tabs[k].btn.addEventListener('click', () => {
+      Object.keys(tabs).forEach(x => {
+        tabs[x].btn.classList.toggle('active', x === k);
+        tabs[x].sec.hidden = (x !== k);
+      });
+      if (k === 'chrom') { drawHPLC(); drawTLC(); }
+      if (k === 'pk') { simulatePK(); }
+    });
+  });
+
+  // --- 1. MOLECULAR DOCKING 3D LOGIC ---
+  let glviewer = null;
+  let isSpinning = false;
+
+  const COMPLEX_DATA = {
+    '1cx2': {
+      name: 'Siklooksigenase-2 (COX-2)',
+      code: 'PDB: 1CX2 · Resolusi: 2.1 Å',
+      energy: '-8.4 kcal/mol',
+      ki: '0.68 µM',
+      residues: ['Arg120', 'Tyr355', 'Ser530', 'Val523'],
+      desc: 'Molekul inhibitor mengikat kantung katalitik hidrofobik COX-2 dan membentuk ikatan hidrogen kunci dengan residu Ser530 dan Arg120, menghambat konversi asam arakidonat menjadi prostaglandin.'
+    },
+    '3eml': {
+      name: 'Reseptor Adenosin A2A',
+      code: 'PDB: 3EML · Resolusi: 2.6 Å',
+      energy: '-7.9 kcal/mol',
+      ki: '1.62 µM',
+      residues: ['Phe168', 'Glu169', 'Asn253', 'His278'],
+      desc: 'Alkaloid xanthine bertindak sebagai antagonis kompetitif pada reseptor adenosin A2A, memblokir pengikatan adenosin endogen untuk menstimulasi kewaspadaan sistem saraf pusat.'
+    },
+    '6lu7': {
+      name: 'SARS-CoV-2 Main Protease (Mpro)',
+      code: 'PDB: 6LU7 · Resolusi: 2.16 Å',
+      energy: '-9.1 kcal/mol',
+      ki: '0.21 µM',
+      residues: ['His41', 'Cys145', 'Glu166', 'Gln189'],
+      desc: 'Ligan menargetkan dyad katalitik His41-Cys145 dalam kantung subsite S1/S2 protease utama, memutus replikasi poliprotein virus secara efektif.'
+    },
+    '4dfr': {
+      name: 'Dihidrofolat Reduktase (DHFR)',
+      code: 'PDB: 4DFR · Resolusi: 1.7 Å',
+      energy: '-10.5 kcal/mol',
+      ki: '0.02 µM',
+      residues: ['Asp27', 'Ile5', 'Phe31', 'Leu54'],
+      desc: 'Inhibitor antifolat membentuk jembatan garam kuat dengan residu asam aspartat Asp27 dan cincin pteridin, menghentikan sintesis nukleotida timidin.'
+    },
+    '2rh1': {
+      name: 'Reseptor Adrenergik Beta-2 (β2-AR)',
+      code: 'PDB: 2RH1 · Resolusi: 2.4 Å',
+      energy: '-8.2 kcal/mol',
+      ki: '0.98 µM',
+      residues: ['Asp113', 'Ser203', 'Asn312', 'Phe290'],
+      desc: 'Agonis beta-2 berikatan dengan heliks transmembran TM3 & TM5 melalui Asp113, memicu konformasi aktif reseptor untuk relaksasi otot polos bronkus.'
+    }
+  };
+
+  function initDockingViewer() {
+    const el = document.getElementById('docking-viewer');
+    if (!el || typeof $3Dmol === 'undefined') return;
+    glviewer = $3Dmol.createViewer(el, { defaultcolors: $3Dmol.rasmolElementColors });
+    loadPdbComplex('1cx2');
+  }
+
+  function loadPdbComplex(pdbId) {
+    if (!glviewer) return;
+    glviewer.clear();
+    const data = COMPLEX_DATA[pdbId] || COMPLEX_DATA['1cx2'];
+
+    document.getElementById('dock-target-name').textContent = data.name;
+    document.getElementById('dock-pdb-code').textContent = data.code;
+    document.getElementById('dock-energy').textContent = data.energy;
+    document.getElementById('dock-ki').textContent = data.ki;
+    document.getElementById('dock-desc').textContent = data.desc;
+    document.getElementById('dock-residues').innerHTML = data.residues.map(r => `<span class="synonym-chip">${r}</span>`).join('');
+
+    $3Dmol.download(`pdb:${pdbId}`, glviewer, {}, function () {
+      glviewer.setStyle({ protein: true }, { cartoon: { color: 'spectrum', opacity: 0.85 } });
+      glviewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'greenCarbon', radius: 0.25 }, sphere: { scale: 0.3 } });
+      glviewer.zoomTo();
+      glviewer.render();
+    });
+  }
+
+  document.querySelectorAll('.preset-btn[data-pdb]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preset-btn[data-pdb]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadPdbComplex(btn.dataset.pdb);
+    });
+  });
+
+  document.getElementById('dock-spin-btn').addEventListener('click', () => {
+    isSpinning = !isSpinning;
+    if (glviewer) glviewer.spin(isSpinning ? 'y' : false);
+  });
+  document.getElementById('dock-reset-btn').addEventListener('click', () => {
+    if (glviewer) { glviewer.zoomTo(); glviewer.render(); }
+  });
+
+  // --- 2. TOXICOLOGY & CYP450 LOGIC ---
+  const runToxBtn = document.getElementById('run-tox-btn');
+  const toxSmilesInput = document.getElementById('tox-smiles-input');
+
+  runToxBtn.addEventListener('click', () => {
+    const smi = (toxSmilesInput.value || '').toLowerCase();
+    const hepEl = document.getElementById('tox-hep');
+    const amesEl = document.getElementById('tox-ames');
+    const hergEl = document.getElementById('tox-herg');
+    const bbbEl = document.getElementById('tox-bbb');
+
+    // Rule-based toxicology estimation
+    if (smi.includes('cl') && smi.includes('cl2') || smi.includes('c(cl)(cl)cl')) {
+      hepEl.innerHTML = '🔴 Tinggi (Hepatotoksik)'; hepEl.className = 'tox-status tox-danger';
+    } else {
+      hepEl.innerHTML = '🟢 Rendah / Aman'; hepEl.className = 'tox-status tox-safe';
+    }
+
+    if (smi.includes('n(=o)=o') || smi.includes('[n+](=o)[o-]')) {
+      amesEl.innerHTML = '🔴 Positif (Mutagenik)'; amesEl.className = 'tox-status tox-danger';
+    } else {
+      amesEl.innerHTML = '🟢 Negatif (Non-mutagenik)'; amesEl.className = 'tox-status tox-safe';
+    }
+
+    if (smi.includes('c1ccc2') && smi.length > 28) {
+      hergEl.innerHTML = '🟡 Sedang (Risiko hERG)'; hergEl.className = 'tox-status tox-warn';
+    } else {
+      hergEl.innerHTML = '🟢 Aman (No Inhibition)'; hergEl.className = 'tox-status tox-safe';
+    }
+
+    if (smi.includes('o') && smi.includes('c(=o)o') && !smi.includes('n')) {
+      bbbEl.innerHTML = '🟡 Penetrasi Rendah (BBB-)'; bbbEl.className = 'tox-status tox-warn';
+    } else if (smi.includes('cn') || smi.includes('c1ccncc1')) {
+      bbbEl.innerHTML = '🟢 Penetrasi Tinggi (BBB+)'; bbbEl.className = 'tox-status tox-safe';
+    } else {
+      bbbEl.innerHTML = '🟡 Penetrasi Moderat'; bbbEl.className = 'tox-status tox-warn';
+    }
+  });
+
+  // --- 3. HPLC & TLC CHROMATOGRAPHY SIMULATOR ---
+  const hplcCanvas = document.getElementById('hplc-canvas');
+  const tlcCanvas = document.getElementById('tlc-plate-canvas');
+  let isUvOn = false;
+
+  function drawHPLC() {
+    if (!hplcCanvas) return;
+    const ctx = hplcCanvas.getContext('2d');
+    const w = hplcCanvas.width;
+    const h = hplcCanvas.height;
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const logpA = parseFloat(document.getElementById('hplc-logp-a').value) || 1.2;
+    const logpB = parseFloat(document.getElementById('hplc-logp-b').value) || 3.5;
+    const flow = parseFloat(document.getElementById('hplc-flow').value) || 1.0;
+
+    const tRA = (2.0 + logpA * 1.5) / flow;
+    const tRB = (2.0 + logpB * 1.5) / flow;
+
+    const maxT = 15.0; // minutes
+    const padLeft = 50, padRight = 30, padTop = 20, padBottom = 40;
+    const plotW = w - padLeft - padRight;
+    const plotH = h - padTop - padBottom;
+
+    function tToX(t) { return padLeft + (t / maxT) * plotW; }
+
+    // Grid & axes
+    const gridCol = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+    const textCol = isLight ? '#5e7260' : '#8a998a';
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+
+    for (let t = 0; t <= maxT; t += 2) {
+      const x = tToX(t);
+      ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, padTop + plotH); ctx.strokeStyle = gridCol; ctx.stroke();
+      ctx.fillStyle = textCol; ctx.fillText(`${t} min`, x, padTop + plotH + 16);
+    }
+
+    ctx.fillStyle = isLight ? '#0f8e81' : '#4fd1c5';
+    ctx.font = '600 11px Space Grotesk, sans-serif';
+    ctx.fillText('Waktu Retensi (Menit)', padLeft + plotW / 2, h - 6);
+
+    // Draw Chromatogram curve
+    ctx.beginPath();
+    ctx.strokeStyle = isLight ? '#0f8e81' : '#4fd1c5';
+    ctx.lineWidth = 2.2;
+
+    const sigA = 0.25;
+    const sigB = 0.35;
+    const ampA = plotH * 0.75;
+    const ampB = plotH * 0.85;
+
+    for (let xPix = 0; xPix <= plotW; xPix++) {
+      const t = (xPix / plotW) * maxT;
+      // Gaussian peaks
+      const gA = Math.exp(-Math.pow(t - tRA, 2) / (2 * sigA * sigA)) * ampA;
+      const gB = Math.exp(-Math.pow(t - tRB, 2) / (2 * sigB * sigB)) * ampB;
+      const noise = (Math.sin(t * 40) + Math.cos(t * 73)) * 0.8;
+      const yVal = padTop + plotH - (gA + gB + noise);
+
+      const px = padLeft + xPix;
+      if (xPix === 0) ctx.moveTo(px, yVal);
+      else ctx.lineTo(px, yVal);
+    }
+    ctx.stroke();
+
+    // Resolution Rs calculation
+    const rs = Math.abs(tRB - tRA) / (2 * (sigA + sigB));
+    document.getElementById('hplc-summary').textContent =
+      `Waktu Retensi: Puncak A (tR = ${tRA.toFixed(2)} min) · Puncak B (tR = ${tRB.toFixed(2)} min) · Resolusi (Rs) = ${rs.toFixed(2)} (${rs >= 1.5 ? 'Pemisahan Sangat Baik' : 'Puncak Tumpang Tindih'})`;
+  }
+
+  ['hplc-logp-a', 'hplc-logp-b', 'hplc-flow'].forEach(id => {
+    document.getElementById(id).addEventListener('input', drawHPLC);
+  });
+
+  function drawTLC() {
+    if (!tlcCanvas) return;
+    const ctx = tlcCanvas.getContext('2d');
+    const w = tlcCanvas.width;
+    const h = tlcCanvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Background silica plate
+    ctx.fillStyle = isUvOn ? '#1a365d' : '#f7fafc';
+    ctx.fillRect(0, 0, w, h);
+
+    const startY = h - 40;
+    const frontY = 40;
+    const travel = startY - frontY;
+
+    // Start line & solvent front line
+    ctx.strokeStyle = isUvOn ? 'rgba(255,255,255,0.4)' : '#a0aec0';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+
+    ctx.beginPath(); ctx.moveTo(20, startY); ctx.lineTo(w - 20, startY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(20, frontY); ctx.lineTo(w - 20, frontY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Spots (Spot 1: Reaktan Rf 0.35, Spot 2: Produk Rf 0.72)
+    const rfA = 0.35;
+    const rfB = 0.72;
+    const ySpotA = startY - travel * rfA;
+    const ySpotB = startY - travel * rfB;
+
+    function drawSpot(cx, cy, label, isTarget) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 14, 10, 0, 0, Math.PI * 2);
+      if (isUvOn) {
+        ctx.fillStyle = isTarget ? '#48bb78' : '#ecc94b';
+        ctx.shadowColor = isTarget ? '#48bb78' : '#ecc94b';
+        ctx.shadowBlur = 12;
+      } else {
+        ctx.fillStyle = '#cbd5e0';
+        ctx.shadowBlur = 0;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.font = '10px IBM Plex Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isUvOn ? '#ffffff' : '#718096';
+      ctx.fillText(label, cx, startY + 18);
+    }
+
+    drawSpot(65, ySpotA, 'Reaktan', false);
+    drawSpot(155, ySpotB, 'Produk', true);
+  }
+
+  document.getElementById('tlc-uv-btn').addEventListener('click', () => {
+    isUvOn = !isUvOn;
+    document.getElementById('tlc-uv-btn').textContent = isUvOn ? '💡 Matikan Lampu UV' : '🔦 Nyalakan Lampu UV 254 nm';
+    document.getElementById('tlc-uv-btn').classList.toggle('active', isUvOn);
+    drawTLC();
+  });
+
+  // --- 4. BUFFER & SOLUTION CALCULATOR ---
+  document.getElementById('calc-sol-btn').addEventListener('click', () => {
+    const mw = parseFloat(document.getElementById('sol-mw').value) || 0;
+    const conc = parseFloat(document.getElementById('sol-conc').value) || 0;
+    const volMl = parseFloat(document.getElementById('sol-vol').value) || 0;
+
+    const massG = (conc * (volMl / 1000) * mw);
+    document.getElementById('sol-result').innerHTML =
+      `Timbang sebanyak <strong style="color:var(--accent); font-size:1.15rem;">${massG.toFixed(3)} g</strong> zat terlarut, larutkan dalam akuades secukupnya, lalu tambahkan akuades hingga volume tepat <strong>${volMl} mL</strong> pada labu ukur.`;
+  });
+
+  // --- 5. IN-VIVO PHARMACOKINETICS SIMULATOR ---
+  const pkCanvas = document.getElementById('pk-canvas');
+  const pkDose = document.getElementById('pk-dose');
+  const pkRegimen = document.getElementById('pk-regimen');
+  const pkThalf = document.getElementById('pk-thalf');
+  const pkVd = document.getElementById('pk-vd');
+
+  const pkCmax = document.getElementById('pk-cmax');
+  const pkTmax = document.getElementById('pk-tmax');
+  const pkAuc = document.getElementById('pk-auc');
+  const pkStatus = document.getElementById('pk-status');
+
+  function simulatePK() {
+    if (!pkCanvas) return;
+    const ctx = pkCanvas.getContext('2d');
+    const w = pkCanvas.width;
+    const h = pkCanvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const dose = parseFloat(pkDose.value) || 500;
+    const regimen = pkRegimen.value;
+    const thalf = parseFloat(pkThalf.value) || 4.0;
+    const vd = parseFloat(pkVd.value) || 45;
+
+    const ke = 0.693 / thalf;
+    const ka = Math.max(1.2, ke * 4.5);
+    const F = 0.85;
+
+    const totalHours = 36;
+    const interval = regimen === 'q8h' ? 8 : (regimen === 'q12h' ? 12 : (regimen === 'q24h' ? 24 : 999));
+    const numDoses = regimen === 'single' ? 1 : Math.ceil(totalHours / interval);
+
+    const numPoints = 360;
+    const points = [];
+    let maxCp = 0;
+    let tMaxActual = 0;
+
+    for (let i = 0; i <= numPoints; i++) {
+      const t = (i / numPoints) * totalHours;
+      let totalCp = 0;
+
+      for (let d = 0; d < numDoses; d++) {
+        const doseTime = d * interval;
+        if (t >= doseTime) {
+          const dt = t - doseTime;
+          const cp = ((F * dose * ka) / (vd * (ka - ke))) * (Math.exp(-ke * dt) - Math.exp(-ka * dt));
+          totalCp += Math.max(0, cp);
+        }
+      }
+
+      if (totalCp > maxCp) {
+        maxCp = totalCp;
+        tMaxActual = t;
+      }
+      points.push({ t, cp: totalCp });
+    }
+
+    let auc24 = 0;
+    const idx24 = Math.floor(numPoints * 24 / totalHours);
+    for (let i = 1; i <= idx24; i++) {
+      const dt = points[i].t - points[i - 1].t;
+      auc24 += ((points[i].cp + points[i - 1].cp) / 2) * dt;
+    }
+
+    if (pkCmax) pkCmax.textContent = `${maxCp.toFixed(1)} µg/mL`;
+    if (pkTmax) pkTmax.textContent = `${tMaxActual.toFixed(1)} Jam`;
+    if (pkAuc) pkAuc.textContent = `${auc24.toFixed(1)} µg·h/mL`;
+
+    const MEC = 4.0;
+    const MTC = 24.0;
+
+    if (pkStatus) {
+      if (maxCp > MTC) {
+        pkStatus.className = 'lipinski-badge fail';
+        pkStatus.textContent = '⚠️ Bahaya Toksisitas: Cmax Melebihi MTC';
+      } else if (maxCp < MEC) {
+        pkStatus.className = 'lipinski-badge warn';
+        pkStatus.textContent = '⚠️ Subterapeutik: Kadar di Bawah MEC';
+      } else {
+        pkStatus.className = 'lipinski-badge pass';
+        pkStatus.textContent = '✓ Aman & Efektif (Dalam Jendela Terapi)';
+      }
+    }
+
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const textCol = isLight ? '#162017' : '#eef2ea';
+    const gridCol = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+    const curveCol = '#0bc5ea';
+    const windowCol = isLight ? 'rgba(72, 187, 120, 0.15)' : 'rgba(72, 187, 120, 0.2)';
+
+    const padLeft = 55;
+    const padBottom = 40;
+    const padTop = 25;
+    const padRight = 25;
+    const plotW = w - padLeft - padRight;
+    const plotH = h - padTop - padBottom;
+
+    const maxPlotY = Math.max(30, maxCp * 1.35);
+
+    function tToX(t) { return padLeft + (t / totalHours) * plotW; }
+    function cpToY(cp) { return padTop + plotH - (cp / maxPlotY) * plotH; }
+
+    const yMTC = cpToY(MTC);
+    const yMEC = cpToY(MEC);
+    ctx.fillStyle = windowCol;
+    ctx.fillRect(padLeft, yMTC, plotW, yMEC - yMTC);
+
+    ctx.strokeStyle = '#e53e3e';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, yMTC);
+    ctx.lineTo(padLeft + plotW, yMTC);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#38a169';
+    ctx.beginPath();
+    ctx.moveTo(padLeft, yMEC);
+    ctx.lineTo(padLeft + plotW, yMEC);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = gridCol;
+    ctx.lineWidth = 1;
+    ctx.fillStyle = textCol;
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+
+    for (let t = 0; t <= totalHours; t += 4) {
+      const x = tToX(t);
+      ctx.beginPath();
+      ctx.moveTo(x, padTop);
+      ctx.lineTo(x, padTop + plotH);
+      ctx.stroke();
+      ctx.fillText(`${t}h`, x, padTop + plotH + 16);
+    }
+
+    ctx.textAlign = 'right';
+    for (let cp = 0; cp <= maxPlotY; cp += 10) {
+      const y = cpToY(cp);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(padLeft + plotW, y);
+      ctx.stroke();
+      ctx.fillText(`${cp}`, padLeft - 8, y + 3);
+    }
+
+    ctx.fillStyle = textCol;
+    ctx.font = '600 11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Waktu Setelah Pemberian / Time (Jam)', padLeft + plotW / 2, h - 8);
+
+    ctx.save();
+    ctx.translate(14, padTop + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Kadar Plasma Cp (µg/mL)', 0, 0);
+    ctx.restore();
+
+    ctx.font = '9.5px IBM Plex Mono, monospace';
+    ctx.fillStyle = '#e53e3e';
+    ctx.textAlign = 'right';
+    ctx.fillText('MTC (Batas Toksik)', padLeft + plotW - 6, yMTC - 4);
+    ctx.fillStyle = '#38a169';
+    ctx.fillText('MEC (Batas Efektif)', padLeft + plotW - 6, yMEC - 4);
+
+    ctx.beginPath();
+    points.forEach((pt, idx) => {
+      const x = tToX(pt.t);
+      const y = cpToY(pt.cp);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = curveCol;
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+
+    ctx.lineTo(tToX(totalHours), cpToY(0));
+    ctx.lineTo(tToX(0), cpToY(0));
+    ctx.closePath();
+    ctx.fillStyle = isLight ? 'rgba(11, 197, 234, 0.12)' : 'rgba(11, 197, 234, 0.18)';
+    ctx.fill();
+  }
+
+  [pkDose, pkRegimen, pkThalf, pkVd].forEach(el => {
+    if (el) el.addEventListener('input', simulatePK);
+  });
+
+  // Initialize
+  setTimeout(() => {
+    initDockingViewer();
+    drawHPLC();
+    drawTLC();
+    simulatePK();
+  }, 100);
+})();
+</script>
+</body>
+</html>

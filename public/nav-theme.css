@@ -1,0 +1,848 @@
+/* =========================================================
+   ChemWebApp — Unified Theme & Navigation Styles
+   ========================================================= */
+
+:root {
+  /* Dark Mode (Default) */
+  --bg: #0f1410;
+  --panel: #161c17;
+  --panel-2: #1c231d;
+  --line: #2a332b;
+  --ink: #eef2ea;
+  --ink-muted: #8a998a;
+  --muted: #8a998a;
+  --accent: #4fd1c5;
+  --accent-hover: #6fe0d5;
+  --accent-dim: #2f6e68;
+  --accent-glow: rgba(79, 209, 197, 0.18);
+  --amber: #e8b339;
+  --amber-dim: rgba(232, 179, 57, 0.2);
+  --error: #e2685a;
+  --error-dim: rgba(226, 104, 90, 0.2);
+  --success: #48bb78;
+  --success-dim: rgba(72, 187, 120, 0.2);
+  --nav-bg: rgba(15, 20, 16, 0.88);
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] {
+  /* Light Mode */
+  --bg: #f5f8f5;
+  --panel: #ffffff;
+  --panel-2: #edf3ed;
+  --line: #d1ddd2;
+  --ink: #162017;
+  --ink-muted: #5e7260;
+  --muted: #5e7260;
+  --accent: #0f8e81;
+  --accent-hover: #0c766b;
+  --accent-dim: #99dfd7;
+  --accent-glow: rgba(15, 142, 129, 0.15);
+  --amber: #b7791f;
+  --amber-dim: rgba(183, 121, 31, 0.15);
+  --error: #c53030;
+  --error-dim: rgba(197, 48, 48, 0.15);
+  --success: #276749;
+  --success-dim: rgba(39, 103, 73, 0.15);
+  --nav-bg: rgba(245, 248, 245, 0.92);
+  --modal-overlay: rgba(15, 20, 16, 0.45);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Background Grid Adaptability */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+}
+
+/* Unified Navbar */
+.chem-navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--nav-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.chem-navbar {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chem-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.chem-brand-badge {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+}
+
+.chem-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chem-nav-item a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.chem-nav-item a:hover {
+  color: var(--ink);
+  background: var(--panel-2);
+  border-color: var(--line);
+}
+
+.chem-nav-item a.active {
+  color: var(--accent);
+  background: var(--accent-glow);
+  border-color: var(--accent-dim);
+  font-weight: 600;
+}
+
+.chem-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Mobile Nav Toggle */
+.chem-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .chem-nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+    gap: 0.5rem;
+    box-shadow: var(--shadow);
+  }
+  .chem-nav-links.show {
+    display: flex;
+  }
+  .chem-mobile-toggle {
+    display: block;
+  }
+}
+
+/* =========================================================
+   Lipinski's Rule of 5 Badge & Modal Styles
+   ========================================================= */
+
+.lipinski-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  transition: border-color 0.15s ease;
+}
+
+.lipinski-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lipinski-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lipinski-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lipinski-status.pass {
+  background: var(--success-dim);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.lipinski-status.warn {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+}
+
+.lipinski-status.fail {
+  background: var(--error-dim);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.lipinski-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.lipinski-item {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lipinski-item.item-fail {
+  border-color: var(--error);
+}
+
+.lipinski-item .li-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.lipinski-item .li-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lipinski-item .li-icon {
+  font-size: 0.8rem;
+}
+
+/* =========================================================
+   Modal Dialogs (Export/Import/High-Res)
+   ========================================================= */
+
+.chem-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.chem-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chem-modal {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+
+.chem-modal-overlay.open .chem-modal {
+  transform: translateY(0);
+}
+
+.chem-modal-head {
+  padding: 16px 20px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chem-modal-head h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+}
+
+.chem-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.chem-modal-close:hover {
+  color: var(--ink);
+}
+
+.chem-modal-body {
+  padding: 20px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.chem-modal-foot {
+  padding: 14px 20px;
+  background: var(--panel-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* =========================================================
+   Interactive Atom & Bond Highlighter Toolbar
+   ========================================================= */
+
+.highlighter-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.hl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.hl-chip input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.hl-chip:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.hl-chip.active-hbd {
+  background: rgba(66, 153, 225, 0.18);
+  border-color: #4299e1;
+  color: #4299e1;
+  font-weight: 600;
+}
+
+.hl-chip.active-hba {
+  background: rgba(226, 104, 90, 0.18);
+  border-color: #e2685a;
+  color: #e2685a;
+  font-weight: 600;
+}
+
+.hl-chip.active-rotb {
+  background: rgba(232, 179, 57, 0.18);
+  border-color: #e8b339;
+  color: #e8b339;
+  font-weight: 600;
+}
+
+.hl-chip.active-arom {
+  background: rgba(72, 187, 120, 0.18);
+  border-color: #48bb78;
+  color: #48bb78;
+  font-weight: 600;
+}
+
+.hl-chip.active-nums {
+  background: rgba(159, 122, 234, 0.18);
+  border-color: #9f7aea;
+  color: #9f7aea;
+  font-weight: 600;
+}
+
+/* =========================================================
+   Spectroscopy Estimation Styles
+   ========================================================= */
+
+.spectro-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.spectro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+@media (max-width: 800px) {
+  .spectro-grid { grid-template-columns: 1fr; }
+}
+
+.spectro-col h4 {
+  margin: 0 0 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spectro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.spectro-table th, .spectro-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.spectro-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--panel-2);
+}
+
+.spectro-table td.freq {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* =========================================================
+   Bioavailability Radar Canvas Styles
+   ========================================================= */
+
+.radar-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.radar-canvas-wrap {
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* =========================================================
+   Format Converter Box Styles
+   ========================================================= */
+
+.converter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.converter-row label {
+  width: 130px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.converter-row input, .converter-row textarea {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+}
+
+/* =========================================================
+   Universal Send-To Action Hub Dropdown
+   ========================================================= */
+
+.send-to-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.send-to-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 260px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px 0;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.send-to-dropdown.open .send-to-content {
+  display: block;
+  animation: sendToFadeIn 0.15s ease-out;
+}
+
+@keyframes sendToFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.send-to-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+}
+
+.send-to-item:hover {
+  background: var(--panel-2);
+  color: var(--accent);
+  padding-left: 18px;
+}
+
+/* =========================================================
+   Universal Command Palette (Ctrl + K)
+   ========================================================= */
+
+.cmd-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.cmd-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cmd-modal {
+  width: 90%;
+  max-width: 640px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.96) translateY(-10px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cmd-backdrop.open .cmd-modal {
+  transform: scale(1) translateY(0);
+}
+
+.cmd-search-wrap {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.cmd-search-icon {
+  font-size: 1.1rem;
+  margin-right: 12px;
+  color: var(--accent);
+}
+
+.cmd-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.05rem;
+  outline: none;
+}
+
+.cmd-kbd {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+.cmd-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.cmd-category {
+  padding: 6px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.cmd-item:hover, .cmd-item.active {
+  background: var(--panel-2);
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+}
+
+.cmd-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cmd-item-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.cmd-item:hover .cmd-item-title, .cmd-item.active .cmd-item-title {
+  color: var(--accent);
+}
+
+.cmd-item-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.cmd-item-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  background: rgba(79, 209, 197, 0.15);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.cmd-footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* =========================================================
+   Publication-Ready Print / PDF Styles (@media print)
+   ========================================================= */
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt !important;
+  }
+  .chem-nav-wrapper,
+  .panel-actions,
+  .highlighter-toolbar,
+  .actions-bar,
+  .icon-btn,
+  button,
+  .mode-tabs,
+  .input-tabs,
+  #input-panel-text,
+  #input-panel-name,
+  #input-panel-draw,
+  .toast,
+  .cmd-backdrop {
+    display: none !important;
+  }
+  .panel, .radar-card, .spectro-card {
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 15px !important;
+    page-break-inside: avoid;
+  }
+  .panel-head {
+    border-bottom: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+  }
+  .panel-head .label {
+    color: #111827 !important;
+  }
+  canvas {
+    max-width: 100% !important;
+  }
+  footer {
+    display: block !important;
+    border-top: 1px solid #ccc !important;
+    color: #666 !important;
+  }
+}
+

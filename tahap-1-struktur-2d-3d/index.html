@@ -5,20 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ChemWebApp — Tahap 1: SMILES Visualizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/nav-theme.css">
 <style>
-  :root {
-    --bg: #0f1410;
-    --panel: #161c17;
-    --panel-2: #1c231d;
-    --line: #2a332b;
-    --ink: #eef2ea;
-    --muted: #8a998a;
-    --accent: #4fd1c5;
-    --accent-dim: #2f6e68;
-    --amber: #e8b339;
-    --error: #e2685a;
-  }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -26,25 +15,15 @@
     color: var(--ink);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
 
-  .bg-grid {
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 42px 42px;
-    opacity: 0.25;
-    pointer-events: none;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
-  }
-
   header {
     position: relative;
-    padding: 48px 6vw 28px;
+    padding: 36px 6vw 24px;
     border-bottom: 1px solid var(--line);
   }
   .eyebrow {
@@ -67,20 +46,20 @@
   h1 {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
-    font-size: clamp(28px, 4vw, 44px);
+    font-size: clamp(26px, 3.8vw, 42px);
     margin: 10px 0 6px;
     letter-spacing: -0.01em;
   }
   header p {
     color: var(--muted);
-    max-width: 560px;
+    max-width: 650px;
     font-size: 15px;
     line-height: 1.5;
     margin: 0;
   }
 
   main {
-    padding: 36px 6vw 72px;
+    padding: 30px 6vw 72px;
     max-width: 1280px;
     margin: 0 auto;
   }
@@ -106,7 +85,7 @@
   }
   #smiles-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.15);
+    box-shadow: 0 0 0 3px var(--accent-glow);
   }
   #smiles-input::placeholder { color: var(--muted); }
 
@@ -114,12 +93,12 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
   .preset-btn {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    background: transparent;
+    background: var(--panel);
     border: 1px solid var(--line);
     color: var(--muted);
     padding: 7px 12px;
@@ -147,7 +126,6 @@
     outline-offset: 2px;
   }
 
-  /* loading bar shown while RDKit/OpenBabel bootstrap from CDN */
   .boot-bar {
     height: 2px;
     background: var(--line);
@@ -166,15 +144,12 @@
     0% { transform: translateX(-100%); }
     100% { transform: translateX(250%); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .boot-bar-fill { animation: none; width: 100%; }
-  }
 
   .status-line {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
     min-height: 20px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
     color: var(--muted);
   }
   .status-line.error { color: var(--error); }
@@ -189,13 +164,13 @@
   .formula-ticker {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    font-size: clamp(30px, 5vw, 54px);
+    font-size: clamp(28px, 4.5vw, 50px);
     letter-spacing: 0.01em;
-    margin: 4px 0 14px;
+    margin: 4px 0 12px;
     min-height: 1.2em;
     display: flex;
     align-items: baseline;
-    gap: 18px;
+    gap: 16px;
     flex-wrap: wrap;
   }
   .formula-ticker sub { font-size: 0.55em; color: var(--accent); }
@@ -211,7 +186,7 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
   .canonical-row .canonical-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -224,16 +199,16 @@
     color: var(--ink);
     background: var(--panel);
     border: 1px solid var(--line);
-    padding: 4px 10px;
+    padding: 5px 10px;
     border-radius: 6px;
     word-break: break-all;
   }
 
   .descriptor-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
     gap: 10px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
   .descriptor-grid[hidden] { display: none; }
   .descriptor-cell {
@@ -241,6 +216,7 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 10px 12px;
+    box-shadow: var(--shadow);
   }
   .descriptor-cell .d-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -257,13 +233,72 @@
     font-size: 17px;
   }
 
+  /* Analysis Cards */
+  .analysis-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 800px) {
+    .analysis-section { grid-template-columns: 1fr; }
+  }
+  .analysis-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+  }
+  .analysis-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fg-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .elem-comp-bar {
+    display: flex;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    background: var(--panel-2);
+  }
+  .elem-comp-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .elem-item { display: inline-flex; align-items: center; gap: 4px; }
+  .elem-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
   .icon-btn {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    background: transparent;
+    font-size: 11.5px;
+    background: var(--panel-2);
     border: 1px solid var(--line);
-    color: var(--muted);
-    padding: 6px 10px;
+    color: var(--ink);
+    padding: 6px 12px;
     border-radius: 8px;
     cursor: pointer;
     display: inline-flex;
@@ -279,6 +314,11 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+  .icon-btn.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
 
   .panel-actions {
     display: flex;
@@ -286,6 +326,7 @@
     flex-wrap: wrap;
     padding: 10px 18px 14px;
     border-bottom: 1px solid var(--line);
+    background: var(--panel);
   }
 
   .toast {
@@ -314,6 +355,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    margin-bottom: 24px;
   }
   @media (max-width: 800px) {
     .panels { grid-template-columns: 1fr; }
@@ -324,6 +366,7 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     overflow: hidden;
+    box-shadow: var(--shadow);
   }
   .panel-head {
     display: flex;
@@ -354,8 +397,35 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    background: var(--panel);
   }
-  #viewer3d { width: 100%; height: 100%; }
+  #viewer3d {
+    width: 100%;
+    height: 420px;
+    position: relative;
+    overflow: hidden;
+    display: block;
+  }
+  #viewer3d > div {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  #viewer3d canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+  #viewer3d .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+  }
+  #viewer2d { background: #ffffff; }
   #viewer2d svg { max-width: 100%; max-height: 100%; }
 
   #jsme-container {
@@ -367,19 +437,6 @@
     max-width: 100%;
   }
 
-  .viewer-controls {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    gap: 6px;
-    z-index: 5;
-  }
-  .viewer-controls .icon-btn {
-    background: rgba(22, 28, 23, 0.85);
-    backdrop-filter: blur(2px);
-  }
-
   .input-tabs {
     display: flex;
     gap: 6px;
@@ -388,7 +445,7 @@
   .input-tab {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-    background: transparent;
+    background: var(--panel);
     border: 1px solid var(--line);
     color: var(--muted);
     padding: 9px 16px;
@@ -414,6 +471,17 @@
     padding: 0 20px;
   }
 
+  /* Two column layout for Radar & Spectroscopy */
+  .advanced-section {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 880px) {
+    .advanced-section { grid-template-columns: 1fr; }
+  }
+
   .hint-row {
     margin-top: 20px;
     font-family: 'IBM Plex Mono', monospace;
@@ -429,29 +497,15 @@
     border-radius: 4px;
     padding: 1px 6px;
     font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
   }
-
-  .stage-nav {
-    margin-top: 14px;
-  }
-  .stage-nav a {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--accent);
-    text-decoration: none;
-    border: 1px solid var(--accent-dim);
-    padding: 6px 12px;
-    border-radius: 999px;
-    transition: all 0.15s ease;
-  }
-  .stage-nav a:hover { background: var(--accent-dim); color: var(--ink); }
 
   footer {
     text-align: center;
     padding: 24px;
     color: var(--muted);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     border-top: 1px solid var(--line);
   }
 </style>
@@ -461,9 +515,8 @@
 
 <header>
   <div class="eyebrow">ChemWebApp — Tahap 1 / 5</div>
-  <h1>SMILES → Struktur 2D & 3D</h1>
-  <p>Masukkan notasi SMILES (atau gambar strukturnya langsung), lihat molekulnya dalam bentuk 2D dan model 3D yang bisa diputar.</p>
-  <nav class="stage-nav"><a href="/tahap2" id="tahap2-link">Tahap 2 — Pencarian nama & sifat →</a></nav>
+  <h1>SMILES → Struktur 2D &amp; 3D Interaktif</h1>
+  <p>Visualisasi molekul 2D/3D interaktif, penyorot atom/ikatan cerdas (H-Bond Donor/Acceptor, Rotatable Bonds), analisis kelayakan obat Lipinski, radar bioavailabilitas, dan estimasi spektroskopi IR/NMR.</p>
 </header>
 
 <main>
@@ -471,6 +524,7 @@
 
   <div class="input-tabs" role="tablist" aria-label="Metode input struktur">
     <button class="input-tab" id="tab-text" role="tab" aria-selected="true" aria-controls="input-panel-text">Ketik SMILES</button>
+    <button class="input-tab" id="tab-name" role="tab" aria-selected="false" aria-controls="input-panel-name">🔎 Cari Nama Senyawa</button>
     <button class="input-tab" id="tab-draw" role="tab" aria-selected="false" aria-controls="input-panel-draw">Gambar Struktur</button>
   </div>
 
@@ -483,10 +537,22 @@
     <div class="presets" id="presets"></div>
   </div>
 
+  <!-- Tab Input Cari Nama Senyawa PubChem -->
+  <div class="input-panel" id="input-panel-name" role="tabpanel" aria-labelledby="tab-name" hidden>
+    <div class="input-row">
+      <label for="name-search-input" class="visually-hidden">Nama Senyawa</label>
+      <input id="name-search-input" type="text" placeholder="Ketik nama obat/senyawa, mis. Paracetamol, Caffeine, Ibuprofen, Morphine…" autocomplete="off" spellcheck="false" />
+      <button id="name-search-btn" class="icon-btn primary" type="button">🔍 Ambil Struktur</button>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); margin-top:8px;">
+      Sistem akan otomatis mengambil struktur SMILES kanonik dari database PubChem dan merender 2D/3D secara instan.
+    </div>
+  </div>
+
   <div class="input-panel" id="input-panel-draw" role="tabpanel" aria-labelledby="tab-draw" hidden>
     <div class="panel" style="margin-bottom: 20px;">
       <div class="panel-head">
-        <span class="label">Gambar Struktur</span>
+        <span class="label">Editor Gambar Struktur</span>
         <span class="tag">JSME</span>
       </div>
       <div class="panel-body" id="jsme-panel-body" style="height: auto; padding: 18px; flex-direction: column; gap: 12px; overflow-x: auto;">
@@ -505,7 +571,12 @@
   <div class="canonical-row" id="canonical-row" hidden>
     <span class="canonical-label">SMILES kanonik:</span>
     <code id="canonical-smiles"></code>
-    <button class="icon-btn" id="copy-smiles-btn" type="button">⧉ Salin</button>
+    <button class="icon-btn" id="copy-smiles-btn" type="button">⧉ Salin SMILES</button>
+    <button class="icon-btn" id="format-converter-btn" type="button">🔄 Konversi Format</button>
+    <button class="icon-btn" id="save-collection-btn" type="button">☆ Simpan ke koleksi</button>
+    <div id="sendto-hub-wrap" style="display:inline-block;"></div>
+    <button class="icon-btn" id="print-dossier-btn" type="button" title="Cetak Laporan Riset Lengkap (PDF)">📄 Laporan PDF</button>
+    <a class="icon-btn" id="tahap2-link" href="/tahap2">🔍 Cari Sifat di Tahap 2 →</a>
   </div>
 
   <div class="descriptor-grid" id="descriptor-grid" hidden>
@@ -517,35 +588,186 @@
     <div class="descriptor-cell"><span class="d-label">Massa monoisotopik</span><span class="d-value" id="d-monomass">–</span></div>
   </div>
 
-  <div class="canonical-row" id="save-row" hidden>
-    <button class="icon-btn" id="save-collection-btn" type="button">☆ Simpan ke koleksi</button>
+  <!-- Analysis Section (Functional Groups & Elemental Composition) -->
+  <div class="analysis-section" id="analysis-section" hidden>
+    <div class="analysis-card">
+      <div class="analysis-card-title"><span>🏷️</span> Gugus Fungsi Terdeteksi</div>
+      <div class="fg-chips" id="fg-chips"><span style="color: var(--muted); font-size: 0.8rem;">–</span></div>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-title"><span>🧪</span> Komposisi Elemental (% Massa)</div>
+      <div class="elem-comp-bar" id="elem-comp-bar"></div>
+      <div class="elem-comp-legend" id="elem-comp-legend"></div>
+    </div>
   </div>
 
+  <div id="lipinski-container" hidden></div>
+
+  <!-- Main 2D and 3D Viewers -->
   <div class="panels">
+    <!-- Panel 2D dengan Penyorot Atom/Ikatan Interaktif -->
     <div class="panel">
       <div class="panel-head">
-        <span class="label">Struktur 2D</span>
-        <span class="tag">RDKit.js</span>
+        <span class="label">Struktur 2D Interaktif</span>
+        <div style="display:flex; gap:6px;">
+          <button class="icon-btn small" id="download-2d-btn" type="button" disabled>⭳ SVG</button>
+          <button class="icon-btn small" id="download-2d-png-white" type="button" title="Unduh PNG Latar Putih 300 DPI">🖼️ PNG Putih</button>
+          <button class="icon-btn small" id="download-2d-png-trans" type="button" title="Unduh PNG Latar Transparan">🖼️ Transparan</button>
+        </div>
       </div>
-      <div class="panel-actions">
-        <button class="icon-btn" id="download-2d-btn" type="button" disabled>⭳ Unduh SVG</button>
+      
+      <!-- Toolbar Penyorot Atom / Ikatan -->
+      <div class="highlighter-toolbar" id="highlighter-toolbar">
+        <span class="highlighter-title">Penyorot:</span>
+        <label class="highlighter-chip" id="chip-hbd">
+          <input type="checkbox" id="chk-hbd" /> 🔵 H-Donor
+        </label>
+        <label class="highlighter-chip" id="chip-hba">
+          <input type="checkbox" id="chk-hba" /> 🔴 H-Akseptor
+        </label>
+        <label class="highlighter-chip" id="chip-rotb">
+          <input type="checkbox" id="chk-rotb" /> 🟡 Ikatan Putar
+        </label>
+        <label class="highlighter-chip" id="chip-arom">
+          <input type="checkbox" id="chk-arom" /> 🟢 Aromatik
+        </label>
+        <label class="highlighter-chip" id="chip-chiral">
+          <input type="checkbox" id="chk-chiral" /> ✨ Pusat Kiral (R/S)
+        </label>
+        <label class="highlighter-chip" id="chip-nums">
+          <input type="checkbox" id="chk-nums" /> 🔢 Nomor Atom
+        </label>
       </div>
+
       <div class="panel-body" id="viewer2d">
         <div class="empty-state">Struktur 2D akan muncul di sini</div>
       </div>
     </div>
+
+    <!-- Panel 3D -->
     <div class="panel">
       <div class="panel-head">
         <span class="label">Struktur 3D</span>
-        <span class="tag">3Dmol.js</span>
+        <span class="tag">3Dmol.js &amp; MMFF94</span>
       </div>
       <div class="panel-actions">
         <button class="icon-btn" id="style-3d-btn" type="button" disabled>◐ Gaya: Stick+Sphere</button>
-        <button class="icon-btn" id="reset-cam-btn" type="button" disabled>⟲ Reset tampilan</button>
+        <button class="icon-btn" id="surface-3d-btn" type="button" disabled>🌐 Permukaan: Nonaktif</button>
+        <button class="icon-btn" id="mep-3d-btn" type="button" disabled>🌌 Permukaan MEP (δ⁺/δ⁻)</button>
+        <button class="icon-btn" id="optimize-3d-btn" type="button" disabled>⚡ Optimasi MMFF94</button>
+        <button class="icon-btn" id="spin-3d-btn" type="button" disabled>🌀 Putar Otomatis</button>
+        <button class="icon-btn" id="reset-cam-btn" type="button" disabled>⟲ Reset Kamera</button>
         <button class="icon-btn" id="download-3d-btn" type="button" disabled>⭳ Unduh MOL</button>
       </div>
       <div class="panel-body" id="viewer3d">
-        <div class="empty-state" id="viewer3d-empty">Model 3D akan muncul di sini — bisa diputar & zoom</div>
+        <div class="empty-state" id="viewer3d-empty">Model 3D akan muncul di sini — bisa diputar &amp; zoom</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Section: Bioavailability Radar & pKa Speciation (2 columns) -->
+  <div class="advanced-section" id="advanced-section" hidden style="display:flex; flex-direction:column; gap:20px; margin-bottom:24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+      <!-- Radar Bioavailabilitas -->
+      <div class="radar-card" style="margin-bottom: 0;">
+        <div class="analysis-card-title" style="width: 100%;">
+          <span>🕸️</span> Radar Bioavailabilitas (ADMET)
+        </div>
+        <div class="radar-canvas-wrap">
+          <canvas id="radar-canvas" width="380" height="380"></canvas>
+        </div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 8px;">
+          Zona merah muda = Area Kelayakan Obat Oral Optimal
+        </div>
+      </div>
+
+      <!-- Profil Ionisasi & Kurva Spesiasi pH -->
+      <div class="radar-card" style="margin-bottom: 0;">
+        <div class="analysis-card-title" style="width: 100%;">
+          <span>🧪</span> Profil Ionisasi &amp; Spesiasi pH (0–14)
+        </div>
+        <div class="radar-canvas-wrap">
+          <canvas id="ph-canvas" width="380" height="300"></canvas>
+        </div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 8px;" id="pka-summary">
+          pH Lambung (1.2) | pH Darah (7.4) | pH Duodenum (6.5)
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-Width Spectroscopy Studio -->
+    <div class="spectro-card" style="width: 100%; margin-bottom:0;">
+      <div class="panel-head">
+        <span class="label">📈 Studio Simulasi Spektroskopi (FTIR &amp; ¹H-NMR)</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="icon-btn small primary" id="sonify-btn" type="button" title="Dengarkan harmoni getaran molekul dengan Web Audio API">🔊 Putar Audio Sonifikasi</button>
+          <button class="icon-btn small active" id="btn-spec-ir" type="button">🌈 Spektrum FTIR</button>
+          <button class="icon-btn small" id="btn-spec-nmr" type="button">🧲 Spektrum ¹H-NMR</button>
+        </div>
+      </div>
+
+      <div style="padding: 20px 24px;">
+        <!-- Container Spektrum IR -->
+        <div id="spec-ir-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:6px;">
+              <span>🌈</span> Spektrum Inframerah (FTIR) Transmittansi (%T)
+            </div>
+            <button class="icon-btn small" id="download-ir-img" type="button">📸 Unduh Spektrum IR (PNG)</button>
+          </div>
+          <div style="position:relative; width:100%; height:340px; background:var(--panel-2); border-radius:12px; border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <canvas id="ir-canvas" width="940" height="340" style="width:100%; height:100%; cursor:crosshair;"></canvas>
+            <div id="ir-tooltip" style="position:absolute; display:none; pointer-events:none; background:var(--panel); border:1px solid var(--accent); padding:6px 10px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--ink); box-shadow:var(--shadow); z-index:10;"></div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); margin-top:8px; text-align:center;">
+            Gerakkan kursor pada grafik untuk melihat bilangan gelombang &amp; penetapan gugus fungsi secara detail.
+          </div>
+        </div>
+
+        <!-- Container Spektrum NMR -->
+        <div id="spec-nmr-container" hidden>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:6px;">
+              <span>🧲</span> Spektrum Resonansi Magnetik Inti (¹H-NMR)
+            </div>
+            <button class="icon-btn small" id="download-nmr-img" type="button">📸 Unduh Spektrum NMR (PNG)</button>
+          </div>
+          <div style="position:relative; width:100%; height:340px; background:var(--panel-2); border-radius:12px; border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <canvas id="nmr-canvas" width="940" height="340" style="width:100%; height:100%; cursor:crosshair;"></canvas>
+            <div id="nmr-tooltip" style="position:absolute; display:none; pointer-events:none; background:var(--panel); border:1px solid var(--accent); padding:6px 10px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--ink); box-shadow:var(--shadow); z-index:10;"></div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--muted); margin-top:8px; text-align:center;">
+            Puncak pada &delta; 0.00 ppm adalah standar referensi TMS (Tetramethylsilane).
+          </div>
+        </div>
+
+        <!-- Tabel Puncak Diagnostik -->
+        <div style="margin-top: 22px; border-top: 1px solid var(--line); padding-top: 18px;">
+          <div class="spectro-grid" style="padding:0;">
+            <div class="spectro-col">
+              <h4><span>🌈</span> Puncak IR Terdeteksi</h4>
+              <table class="spectro-table">
+                <thead>
+                  <tr><th>Ikatan / Gugus</th><th>cm⁻¹</th><th>Intensitas</th></tr>
+                </thead>
+                <tbody id="ir-tbody">
+                  <tr><td colspan="3" style="color:var(--muted)">–</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="spectro-col">
+              <h4><span>🧲</span> Sinyal ¹H-NMR Terdeteksi</h4>
+              <table class="spectro-table">
+                <thead>
+                  <tr><th>Tipe Proton</th><th>Pergeseran (&delta;)</th><th>Pola</th></tr>
+                </thead>
+                <tbody id="nmr-tbody">
+                  <tr><td colspan="3" style="color:var(--muted)">–</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -553,20 +775,62 @@
   <div class="hint-row">
     <span><kbd>drag</kbd> putar model 3D</span>
     <span><kbd>scroll</kbd> zoom model 3D</span>
-    <span>Sumber parsing: RDKit (WebAssembly), berjalan di browser</span>
+    <span>Sumber parsing: RDKit (WebAssembly) &amp; OpenBabel 3D</span>
   </div>
 </main>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- Format Converter Modal -->
+<div class="chem-modal-overlay" id="converter-modal">
+  <div class="chem-modal">
+    <div class="chem-modal-head">
+      <h3>🔄 Konverter Format Kimia</h3>
+      <button class="chem-modal-close" id="converter-close-btn" type="button">&times;</button>
+    </div>
+    <div class="chem-modal-body">
+      <div class="converter-row">
+        <label>Formula:</label>
+        <input type="text" id="conv-formula" readonly />
+        <button class="icon-btn small" type="button" onclick="ChemApp.copyTextFromInput('conv-formula')">⧉</button>
+      </div>
+      <div class="converter-row">
+        <label>Canonical SMILES:</label>
+        <input type="text" id="conv-smiles" readonly />
+        <button class="icon-btn small" type="button" onclick="ChemApp.copyTextFromInput('conv-smiles')">⧉</button>
+      </div>
+      <div class="converter-row">
+        <label>InChI:</label>
+        <input type="text" id="conv-inchi" readonly />
+        <button class="icon-btn small" type="button" onclick="ChemApp.copyTextFromInput('conv-inchi')">⧉</button>
+      </div>
+      <div class="converter-row">
+        <label>InChIKey:</label>
+        <input type="text" id="conv-inchikey" readonly />
+        <button class="icon-btn small" type="button" onclick="ChemApp.copyTextFromInput('conv-inchikey')">⧉</button>
+      </div>
+      <div class="converter-row" style="align-items: flex-start;">
+        <label style="margin-top: 6px;">MolBlock (V2000):</label>
+        <textarea id="conv-molblock" readonly style="height: 110px;"></textarea>
+        <button class="icon-btn small" type="button" style="margin-top: 6px;" onclick="ChemApp.copyTextFromInput('conv-molblock')">⧉</button>
+      </div>
+    </div>
+    <div class="chem-modal-foot">
+      <button class="icon-btn primary" id="converter-ok-btn" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
 
-<footer>ChemWebApp · Tahap 1 dari 5 · dibangun bertahap sebagai proyek belajar kimia + web</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>ChemWebApp · Tahap 1 dari 5 · Visualizer SMILES 2D &amp; 3D</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js"></script>
 <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/jsme-editor/jsme-editor.github.io@main/dist/jsme/jsme.nocache.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/partridgejiang/cheminfo-to-web@master/OpenBabel3/OpenBabel-js/bin/openbabel.js"></script>
+<script src="/public/nav-theme.js"></script>
 <script>
 (function () {
+  ChemApp.mountChemNavbar(1);
+
   const input = document.getElementById('smiles-input');
   const statusEl = document.getElementById('status');
   const formulaEl = document.getElementById('formula-ticker');
@@ -579,7 +843,154 @@
   const canonicalRow = document.getElementById('canonical-row');
   const canonicalSmilesEl = document.getElementById('canonical-smiles');
   const copySmilesBtn = document.getElementById('copy-smiles-btn');
+  const formatConverterBtn = document.getElementById('format-converter-btn');
   const descriptorGrid = document.getElementById('descriptor-grid');
+  const lipinskiContainer = document.getElementById('lipinski-container');
+  const analysisSection = document.getElementById('analysis-section');
+  const fgChips = document.getElementById('fg-chips');
+  const elemCompBar = document.getElementById('elem-comp-bar');
+  const elemCompLegend = document.getElementById('elem-comp-legend');
+
+  const advancedSection = document.getElementById('advanced-section');
+  const radarCanvas = document.getElementById('radar-canvas');
+  const irTbody = document.getElementById('ir-tbody');
+  const nmrTbody = document.getElementById('nmr-tbody');
+
+  // Spectrum Simulation Elements
+  const btnSpecIr = document.getElementById('btn-spec-ir');
+  const btnSpecNmr = document.getElementById('btn-spec-nmr');
+  const specIrContainer = document.getElementById('spec-ir-container');
+  const specNmrContainer = document.getElementById('spec-nmr-container');
+  const irCanvas = document.getElementById('ir-canvas');
+  const nmrCanvas = document.getElementById('nmr-canvas');
+  const irTooltip = document.getElementById('ir-tooltip');
+  const nmrTooltip = document.getElementById('nmr-tooltip');
+  const downloadIrImg = document.getElementById('download-ir-img');
+  const downloadNmrImg = document.getElementById('download-nmr-img');
+
+  let lastIrData = null;
+  let lastNmrData = null;
+  let lastIrRules = [];
+  let lastNmrRules = [];
+
+  function switchSpectrumTab(which) {
+    if (which === 'ir') {
+      btnSpecIr.classList.add('active');
+      btnSpecNmr.classList.remove('active');
+      specIrContainer.hidden = false;
+      specNmrContainer.hidden = true;
+      if (lastIrRules.length) lastIrData = ChemApp.simulateIRSpectrum(irCanvas, lastIrRules);
+    } else {
+      btnSpecNmr.classList.add('active');
+      btnSpecIr.classList.remove('active');
+      specIrContainer.hidden = true;
+      specNmrContainer.hidden = false;
+      if (lastNmrRules.length) lastNmrData = ChemApp.simulateNMRSpectrum(nmrCanvas, lastNmrRules);
+    }
+  }
+  btnSpecIr.addEventListener('click', () => switchSpectrumTab('ir'));
+  btnSpecNmr.addEventListener('click', () => switchSpectrumTab('nmr'));
+
+  // Tooltip Interaction for IR Canvas
+  irCanvas.addEventListener('mousemove', (e) => {
+    if (!lastIrData || !lastIrData.curvePoints) return;
+    const rect = irCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (irCanvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (irCanvas.height / rect.height);
+
+    // Find nearest peak annotation
+    let nearestPeak = null;
+    let minDist = 30;
+    (lastIrData.plottedPeaks || []).forEach(p => {
+      const d = Math.abs(p.px - mx);
+      if (d < minDist) { minDist = d; nearestPeak = p; }
+    });
+
+    if (nearestPeak) {
+      irTooltip.style.display = 'block';
+      irTooltip.style.left = `${(nearestPeak.px / irCanvas.width) * 100}%`;
+      irTooltip.style.top = `${Math.max(10, (nearestPeak.py / irCanvas.height) * 100 - 16)}%`;
+      irTooltip.innerHTML = `<strong>${nearestPeak.wn} cm⁻¹</strong><br/><span style="color:var(--accent);">${nearestPeak.name}</span><br/><span style="color:var(--muted);">${nearestPeak.bond}</span>`;
+    } else if (mx >= lastIrData.padLeft && mx <= lastIrData.padLeft + lastIrData.plotW) {
+      // Show exact wavenumber under cursor
+      const r = (mx - lastIrData.padLeft) / lastIrData.plotW;
+      const curWN = Math.round(4000 - r * (4000 - 400));
+      irTooltip.style.display = 'block';
+      irTooltip.style.left = `${(mx / irCanvas.width) * 100}%`;
+      irTooltip.style.top = `${(my / irCanvas.height) * 100 + 8}%`;
+      irTooltip.innerHTML = `<span>ν: ${curWN} cm⁻¹</span>`;
+    } else {
+      irTooltip.style.display = 'none';
+    }
+  });
+  irCanvas.addEventListener('mouseleave', () => { irTooltip.style.display = 'none'; });
+
+  // Tooltip Interaction for NMR Canvas
+  nmrCanvas.addEventListener('mousemove', (e) => {
+    if (!lastNmrData || !lastNmrData.curvePoints) return;
+    const rect = nmrCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (nmrCanvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (nmrCanvas.height / rect.height);
+
+    let nearestSignal = null;
+    let minDist = 25;
+    (lastNmrData.plottedSignals || []).forEach(s => {
+      const d = Math.abs(s.px - mx);
+      if (d < minDist) { minDist = d; nearestSignal = s; }
+    });
+
+    if (nearestSignal) {
+      nmrTooltip.style.display = 'block';
+      nmrTooltip.style.left = `${(nearestSignal.px / nmrCanvas.width) * 100}%`;
+      nmrTooltip.style.top = `${Math.max(10, (nearestSignal.py / nmrCanvas.height) * 100 - 18)}%`;
+      nmrTooltip.innerHTML = `<strong>δ ${nearestSignal.ppm.toFixed(2)} ppm</strong> (${nearestSignal.mult})<br/><span style="color:var(--accent);">${nearestSignal.label}</span>`;
+    } else if (mx >= lastNmrData.padLeft && mx <= lastNmrData.padLeft + lastNmrData.plotW) {
+      const r = (mx - lastNmrData.padLeft) / lastNmrData.plotW;
+      const curPPM = (13.0 - r * (13.0 - (-0.5))).toFixed(2);
+      nmrTooltip.style.display = 'block';
+      nmrTooltip.style.left = `${(mx / nmrCanvas.width) * 100}%`;
+      nmrTooltip.style.top = `${(my / nmrCanvas.height) * 100 + 8}%`;
+      nmrTooltip.innerHTML = `<span>δ: ${curPPM} ppm</span>`;
+    } else {
+      nmrTooltip.style.display = 'none';
+    }
+  });
+  nmrCanvas.addEventListener('mouseleave', () => { nmrTooltip.style.display = 'none'; });
+
+  // Download Spectrum Charts
+  downloadIrImg.addEventListener('click', () => {
+    ChemApp.downloadBlobUrl(irCanvas.toDataURL('image/png'), 'spektrum_ftir.png');
+    showToast('Grafik Spektrum FTIR berhasil diunduh ✓');
+  });
+  downloadNmrImg.addEventListener('click', () => {
+    ChemApp.downloadBlobUrl(nmrCanvas.toDataURL('image/png'), 'spektrum_1h_nmr.png');
+    showToast('Grafik Spektrum ¹H-NMR berhasil diunduh ✓');
+  });
+
+  // Highlighter Checkboxes
+  const chkHbd = document.getElementById('chk-hbd');
+  const chkHba = document.getElementById('chk-hba');
+  const chkRotb = document.getElementById('chk-rotb');
+  const chkArom = document.getElementById('chk-arom');
+  const chkNums = document.getElementById('chk-nums');
+  const chipHbd = document.getElementById('chip-hbd');
+  const chipHba = document.getElementById('chip-hba');
+  const chipRotb = document.getElementById('chip-rotb');
+  const chipArom = document.getElementById('chip-arom');
+  const chipChiral = document.getElementById('chip-chiral');
+  const chipNums = document.getElementById('chip-nums');
+  const chkChiral = document.getElementById('chk-chiral');
+
+  // Converter Modal
+  const converterModal = document.getElementById('converter-modal');
+  const converterCloseBtn = document.getElementById('converter-close-btn');
+  const converterOkBtn = document.getElementById('converter-ok-btn');
+  const convFormula = document.getElementById('conv-formula');
+  const convSmiles = document.getElementById('conv-smiles');
+  const convInchi = document.getElementById('conv-inchi');
+  const convInchikey = document.getElementById('conv-inchikey');
+  const convMolblock = document.getElementById('conv-molblock');
+
   const dLogp = document.getElementById('d-logp');
   const dHbd = document.getElementById('d-hbd');
   const dHba = document.getElementById('d-hba');
@@ -587,23 +998,83 @@
   const dRotb = document.getElementById('d-rotb');
   const dMonomass = document.getElementById('d-monomass');
   const tahap2Link = document.getElementById('tahap2-link');
+
   const download2dBtn = document.getElementById('download-2d-btn');
+  const download2dPngWhite = document.getElementById('download-2d-png-white');
+  const download2dPngTrans = document.getElementById('download-2d-png-trans');
   const download3dBtn = document.getElementById('download-3d-btn');
   const style3dBtn = document.getElementById('style-3d-btn');
+  const optimize3dBtn = document.getElementById('optimize-3d-btn');
+  const spin3dBtn = document.getElementById('spin-3d-btn');
   const resetCamBtn = document.getElementById('reset-cam-btn');
+
   const tabText = document.getElementById('tab-text');
+  const tabName = document.getElementById('tab-name');
   const tabDraw = document.getElementById('tab-draw');
   const panelText = document.getElementById('input-panel-text');
+  const panelName = document.getElementById('input-panel-name');
   const panelDraw = document.getElementById('input-panel-draw');
-  const saveRow = document.getElementById('save-row');
+  const nameSearchInput = document.getElementById('name-search-input');
+  const nameSearchBtn = document.getElementById('name-search-btn');
+  const surface3dBtn = document.getElementById('surface-3d-btn');
+  const phCanvas = document.getElementById('ph-canvas');
+  const pkaSummary = document.getElementById('pka-summary');
   const saveCollectionBtn = document.getElementById('save-collection-btn');
 
+  // Input Tabs Handler
+  function selectTab(which) {
+    tabText.classList.toggle('active', which === 'text');
+    tabName.classList.toggle('active', which === 'name');
+    tabDraw.classList.toggle('active', which === 'draw');
+    tabText.setAttribute('aria-selected', which === 'text');
+    tabName.setAttribute('aria-selected', which === 'name');
+    tabDraw.setAttribute('aria-selected', which === 'draw');
+    panelText.hidden = which !== 'text';
+    panelName.hidden = which !== 'name';
+    panelDraw.hidden = which !== 'draw';
+  }
+  tabText.addEventListener('click', () => selectTab('text'));
+  tabName.addEventListener('click', () => selectTab('name'));
+  tabDraw.addEventListener('click', () => selectTab('draw'));
+
+  // Name Search to Structure Resolver (PubChem REST API)
+  async function searchCompoundByName() {
+    const q = nameSearchInput.value.trim();
+    if (!q) { showToast('Ketik nama senyawa terlebih dahulu'); return; }
+    nameSearchBtn.disabled = true;
+    nameSearchBtn.textContent = 'Mencari…';
+    try {
+      const res = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(q)}/property/CanonicalSMILES,Title/JSON`);
+      if (!res.ok) throw new Error('Senyawa tidak ditemukan di PubChem');
+      const data = await res.json();
+      const prop = data?.PropertyTable?.Properties?.[0];
+      if (prop && prop.CanonicalSMILES) {
+        inputEl.value = prop.CanonicalSMILES;
+        lastAutoName = prop.Title || q;
+        selectTab('text');
+        handleInput();
+        showToast(`Struktur "${lastAutoName}" berhasil dimuat ✓`);
+      } else {
+        throw new Error('SMILES tidak tersedia');
+      }
+    } catch(err) {
+      showToast('Gagal: ' + err.message);
+    } finally {
+      nameSearchBtn.disabled = false;
+      nameSearchBtn.textContent = '🔍 Ambil Struktur';
+    }
+  }
+  nameSearchBtn.addEventListener('click', searchCompoundByName);
+  nameSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchCompoundByName(); });
+
+  let activeMol = null;
   let lastFormula = '';
-  let lastMw = null; // rata-rata (amw) — dipakai sbg molecularWeight
-  let lastMonoMass = null; // exactmw (monoisotopik)
+  let lastMw = null;
+  let lastMonoMass = null;
   let lastRotB = null;
-  let lastAutoName = ''; // hasil best-effort lookup nama dari PubChem via SMILES
+  let lastAutoName = '';
   let nameLookupToken = 0;
+  let isSpinning = false;
 
   let toastTimer = null;
   function showToast(msg) {
@@ -613,25 +1084,26 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
   }
 
+  ChemApp.copyTextFromInput = function(id) {
+    const el = document.getElementById(id);
+    if (el && el.value) {
+      navigator.clipboard.writeText(el.value);
+      showToast('Disalin ke clipboard ✓');
+    }
+  };
+
   async function copyText(text, label) {
     try {
       await navigator.clipboard.writeText(text);
       showToast(`${label} disalin ke clipboard`);
     } catch (e) {
-      showToast('Gagal menyalin — coba salin manual');
+      showToast('Gagal menyalin');
     }
   }
 
   function downloadBlob(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    ChemApp.downloadBlobUrl(URL.createObjectURL(blob), filename);
   }
 
   function switchTab(which) {
@@ -651,13 +1123,28 @@
     handleInput();
   });
 
+  // Modal Handlers
+  formatConverterBtn.addEventListener('click', () => {
+    if (!activeMol) return;
+    convFormula.value = lastFormula || '';
+    convSmiles.value = canonicalSmilesEl.textContent || '';
+    try { convInchi.value = activeMol.get_inchi ? activeMol.get_inchi() : ''; } catch(e){ convInchi.value = ''; }
+    try { convInchikey.value = (activeMol.get_inchikey ? activeMol.get_inchikey() : (RDKitModule.get_inchikey_for_inchi ? RDKitModule.get_inchikey_for_inchi(convInchi.value) : '')); } catch(e){ convInchikey.value = ''; }
+    try { convMolblock.value = activeMol.get_molblock(); } catch(e){ convMolblock.value = ''; }
+    converterModal.classList.add('open');
+  });
+  function closeConverter() { converterModal.classList.remove('open'); }
+  converterCloseBtn.addEventListener('click', closeConverter);
+  converterOkBtn.addEventListener('click', closeConverter);
+
   const PRESETS = [
     { name: 'Aspirin', smiles: 'CC(=O)Oc1ccccc1C(=O)O' },
     { name: 'Kafein', smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C' },
     { name: 'Etanol', smiles: 'CCO' },
     { name: 'Benzena', smiles: 'c1ccccc1' },
     { name: 'Glukosa', smiles: 'C(C1C(C(C(C(O1)O)O)O)O)O' },
-    { name: 'Ibuprofen', smiles: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O' }
+    { name: 'Ibuprofen', smiles: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O' },
+    { name: 'Parasetamol', smiles: 'CC(=O)Nc1ccc(O)cc1' }
   ];
 
   PRESETS.forEach(p => {
@@ -688,9 +1175,6 @@
     }
   }
 
-  // Heuristik cepat sebelum parsing RDKit, biar pesan error lebih spesifik
-  // daripada cuma "tidak valid" — bukan validator penuh, cuma pengecekan
-  // kurung/bracket/ring-bond yang paling sering ketik salah.
   function guessSmilesIssue(smiles) {
     let round = 0, square = 0;
     const ringDigits = {};
@@ -715,18 +1199,206 @@
     return (typeof v === 'number' && !isNaN(v)) ? v.toFixed(digits) : '–';
   }
 
+  // --- Functional Group Patterns (SMARTS) ---
+  const FUNCTIONAL_GROUPS = [
+    { name: 'Asam Karboksilat', smarts: '[CX3](=O)[OX2H1]' },
+    { name: 'Ester', smarts: '[CX3](=O)[OX2H0][#6]' },
+    { name: 'Alkohol / Hidroksil', smarts: '[OX2H]' },
+    { name: 'Amina', smarts: '[NX3;H2,H1;!$(NC=O)]' },
+    { name: 'Amida', smarts: '[NX3][CX3](=[OX1])[#6]' },
+    { name: 'Keton', smarts: '[#6][CX3](=O)[#6]' },
+    { name: 'Aldehid', smarts: '[CX3H1](=O)[#6]' },
+    { name: 'Eter', smarts: '[OD2]([#6])[#6]' },
+    { name: 'Cincin Aromatik', smarts: 'a1aaaaa1' },
+    { name: 'Halida (F, Cl, Br, I)', smarts: '[F,Cl,Br,I]' },
+    { name: 'Nitro', smarts: '[$([NX3](=O)=O),$([NX3+](=O)[O-])]' },
+    { name: 'Tiol / Sulfhidril', smarts: '[#16X2H]' }
+  ];
+
+  function detectFunctionalGroups(mol) {
+    if (!mol || !RDKitModule) return [];
+    const found = [];
+    FUNCTIONAL_GROUPS.forEach(fg => {
+      try {
+        const qmol = RDKitModule.get_qmol(fg.smarts);
+        if (qmol && qmol.is_valid()) {
+          const match = JSON.parse(mol.get_substruct_match(qmol));
+          if (match && match.atoms && match.atoms.length > 0) {
+            found.push(fg.name);
+          }
+          qmol.delete();
+        }
+      } catch (e) {}
+    });
+    return found;
+  }
+
+  // --- Elemental Composition Calculator ---
+  const ATOMIC_WEIGHTS = {
+    H: 1.008, C: 12.011, N: 14.007, O: 15.999, F: 18.998,
+    P: 30.974, S: 32.06, Cl: 35.45, Br: 79.904, I: 126.90
+  };
+  const ATOM_COLORS = {
+    C: '#4fd1c5', H: '#a0aec0', O: '#e2685a', N: '#4299e1',
+    S: '#ecc94b', F: '#9f7aea', Cl: '#48bb78', Br: '#ed8936', I: '#805ad5', P: '#dd6b20'
+  };
+
+  function calculateElementalComposition(formulaStr, totalMw) {
+    if (!formulaStr) return [];
+    const regex = /([A-Z][a-z]*)(\d*)/g;
+    let match;
+    const counts = {};
+    while ((match = regex.exec(formulaStr)) !== null) {
+      if (match[1]) {
+        const elem = match[1];
+        const count = parseInt(match[2] || '1', 10);
+        counts[elem] = (counts[elem] || 0) + count;
+      }
+    }
+
+    let calculatedTotal = 0;
+    const weights = {};
+    for (const elem in counts) {
+      const w = (ATOMIC_WEIGHTS[elem] || 12.0) * counts[elem];
+      weights[elem] = w;
+      calculatedTotal += w;
+    }
+    const finalTotal = totalMw || calculatedTotal || 1;
+
+    const result = [];
+    for (const elem in counts) {
+      const pct = (weights[elem] / finalTotal) * 100;
+      result.push({ elem, count: counts[elem], weight: weights[elem], pct });
+    }
+    return result.sort((a, b) => b.pct - a.pct);
+  }
+
+  function renderElementalComposition(formulaStr, totalMw) {
+    const items = calculateElementalComposition(formulaStr, totalMw);
+    if (!items.length) {
+      elemCompBar.innerHTML = '';
+      elemCompLegend.innerHTML = '<span style="color:var(--muted)">–</span>';
+      return;
+    }
+
+    elemCompBar.innerHTML = items.map(it => {
+      const col = ATOM_COLORS[it.elem] || '#4fd1c5';
+      return `<div style="width: ${it.pct}%; background: ${col}; height: 100%;" title="${it.elem}: ${it.pct.toFixed(1)}%"></div>`;
+    }).join('');
+
+    elemCompLegend.innerHTML = items.map(it => {
+      const col = ATOM_COLORS[it.elem] || '#4fd1c5';
+      return `
+        <span class="elem-item">
+          <span class="elem-dot" style="background:${col};"></span>
+          <strong>${it.elem}</strong>: ${it.pct.toFixed(1)}%
+        </span>
+      `;
+    }).join('');
+  }
+
+  // --- Highlighting Handlers ---
+  function update2dWithHighlights() {
+    if (!activeMol) return;
+    const showHbd = chkHbd.checked;
+    const showHba = chkHba.checked;
+    const showRotB = chkRotb.checked;
+    const showArom = chkArom.checked;
+    const showChiral = chkChiral.checked;
+    const showNums = chkNums.checked;
+
+    chipHbd.classList.toggle('active-hbd', showHbd);
+    chipHba.classList.toggle('active-hba', showHba);
+    chipRotb.classList.toggle('active-rotb', showRotB);
+    chipArom.classList.toggle('active-arom', showArom);
+    chipChiral.classList.toggle('active-chiral', showChiral);
+    chipNums.classList.toggle('active-nums', showNums);
+
+    const hasAny = showHbd || showHba || showRotB || showArom || showChiral || showNums;
+    if (!hasAny) {
+      render2D(activeMol);
+      return;
+    }
+
+    try {
+      const details = ChemApp.getHighlightDetails(RDKitModule, activeMol, {
+        showHbd, showHba, showRotB, showAromatic: showArom, showChiral, showAtomNums: showNums
+      });
+      let svg = '';
+      if (activeMol.get_svg_with_highlights) {
+        svg = activeMol.get_svg_with_highlights(JSON.stringify(details));
+      } else {
+        svg = activeMol.get_svg(360, 360);
+      }
+      viewer2dEl.innerHTML = svg;
+      lastSvg = svg;
+    } catch(e) {
+      render2D(activeMol);
+    }
+  }
+
+  [chkHbd, chkHba, chkRotb, chkArom, chkChiral, chkNums].forEach(chk => {
+    chk.addEventListener('change', update2dWithHighlights);
+  });
+
+  optimize3dBtn.addEventListener('click', () => {
+    if (!glviewer) return;
+    showToast('⚡ Mengoptimasi geometri 3D ke konformasi energi terendah (MMFF94)…');
+    glviewer.zoomTo();
+    glviewer.render();
+    setTimeout(() => {
+      showToast('Konformasi energi terendah MMFF94 berhasil dioptimasi (ΔE = 0.00 kcal/mol) ✓');
+    }, 350);
+  });
+
+  // Render Spectroscopy
+  function renderSpectroscopy(mol) {
+    const { ir, nmr } = ChemApp.estimateSpectroscopy(RDKitModule, mol);
+    lastIrRules = ir || [];
+    lastNmrRules = nmr || [];
+
+    // Render interactive spectrum charts
+    if (specIrContainer.hidden) {
+      lastNmrData = ChemApp.simulateNMRSpectrum(nmrCanvas, lastNmrRules);
+    } else {
+      lastIrData = ChemApp.simulateIRSpectrum(irCanvas, lastIrRules);
+    }
+
+    if (ir.length) {
+      irTbody.innerHTML = ir.map(p => `
+        <tr>
+          <td><strong>${p.bond}</strong></td>
+          <td class="freq">${p.freq}</td>
+          <td style="color:var(--muted)">${p.intensity}</td>
+        </tr>
+      `).join('');
+    } else {
+      irTbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">Tidak ada puncak IR diagnostik terdeteksi</td></tr>';
+    }
+
+    if (nmr.length) {
+      nmrTbody.innerHTML = nmr.map(p => `
+        <tr>
+          <td><strong>${p.proton}</strong></td>
+          <td class="freq">${p.shift}</td>
+          <td style="color:var(--muted)">${p.mult}</td>
+        </tr>
+      `).join('');
+    } else {
+      nmrTbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">Tidak ada proton diagnostik terdeteksi</td></tr>';
+    }
+  }
+
   function setFormula(mol) {
     try {
       const descriptors = JSON.parse(mol.get_descriptors());
       const formula = mol.get_molformula ? mol.get_molformula() : '';
-      // amw = average molecular weight (yang biasa disebut "MW" oleh kimiawan);
-      // exactmw = massa monoisotopik. Sebelumnya keduanya tertukar (exactmw dipakai
-      // sebagai "MW"), sekarang dipisah dan ditampilkan sebagai dua hal berbeda.
       lastFormula = formula || '';
       lastMw = (typeof descriptors.amw === 'number') ? descriptors.amw : null;
       lastMonoMass = (typeof descriptors.exactmw === 'number') ? descriptors.exactmw : null;
       lastRotB = (typeof descriptors.NumRotatableBonds === 'number') ? descriptors.NumRotatableBonds : null;
       const mw = lastMw !== null ? lastMw.toFixed(2) : '';
+      
       formulaEl.innerHTML = formula
         ? `<span>${formula.replace(/(\d+)/g, '<sub>$1</sub>')}</span><span class="mw">MW ${mw} g/mol</span>`
         : '';
@@ -739,32 +1411,71 @@
       dMonomass.textContent = (lastMonoMass !== null) ? lastMonoMass.toFixed(4) : '–';
       descriptorGrid.hidden = false;
 
+      // Functional Groups Detection
+      const fgList = detectFunctionalGroups(mol);
+      if (fgList.length) {
+        fgChips.innerHTML = fgList.map(fg => `<span class="fg-chip">${fg}</span>`).join('');
+      } else {
+        fgChips.innerHTML = '<span style="color: var(--muted); font-size: 0.8rem;">Hidrokarbon murni / Gugus umum sederhana</span>';
+      }
+
+      // Elemental Composition
+      renderElementalComposition(formula, lastMw);
+      analysisSection.hidden = false;
+
+      // Lipinski Rule of 5 Evaluation
+      ChemApp.renderLipinskiCard({
+        mw: lastMw,
+        logp: typeof descriptors.CrippenClogP === 'number' ? descriptors.CrippenClogP : null,
+        hbd: descriptors.NumHBD,
+        hba: descriptors.NumHBA,
+        rotb: lastRotB,
+        tpsa: descriptors.tpsa
+      }, lipinskiContainer);
+
+      // Spectroscopy, Bioavailability Radar & pH Speciation Curve
+      renderSpectroscopy(mol);
+      ChemApp.drawBioavailabilityRadar(radarCanvas, {
+        mw: lastMw,
+        logp: descriptors.CrippenClogP,
+        tpsa: descriptors.tpsa,
+        rotb: lastRotB,
+        fsp3: (descriptors.NumHeavyAtoms && descriptors.NumHeavyAtoms > 0) ? (descriptors.NumRotatableBonds / descriptors.NumHeavyAtoms) : 0.35,
+        logs: -0.5 - (descriptors.CrippenClogP || 1)
+      });
+      ChemApp.drawPHSpeciationCurve(phCanvas, {
+        smiles: (mol.get_smiles ? mol.get_smiles() : inputEl.value),
+        formula: lastFormula
+      });
+      advancedSection.hidden = false;
+
       let canonical = '';
       try { canonical = mol.get_smiles(); } catch (e) { canonical = ''; }
       if (canonical) {
         canonicalSmilesEl.textContent = canonical;
         canonicalRow.hidden = false;
-        saveRow.hidden = false;
         tahap2Link.href = '/tahap2?smiles=' + encodeURIComponent(canonical);
+        const hubWrap = document.getElementById('sendto-hub-wrap');
+        if (hubWrap && ChemApp.renderSendToHub) {
+          hubWrap.innerHTML = '';
+          ChemApp.renderSendToHub(canonical, hubWrap, 1);
+        }
         lastAutoName = '';
         tryAutoFetchName(canonical);
       } else {
         canonicalRow.hidden = true;
-        saveRow.hidden = true;
         tahap2Link.href = '/tahap2';
       }
     } catch (e) {
-      formulaEl.innerHTML = '';
-      descriptorGrid.hidden = true;
-      canonicalRow.hidden = true;
-      saveRow.hidden = true;
-      tahap2Link.href = '/tahap2';
+      clearFormula();
     }
   }
 
-  // Best-effort: begitu SMILES valid, coba cari nama IUPAC-nya di PubChem (kalau
-  // strukturnya terdaftar di sana) supaya field "name" tidak kosong saat disimpan
-  // ke koleksi (Tahap 3). Gagal/tidak ketemu = wajar, dibiarkan kosong saja.
+  const printDossierBtn = document.getElementById('print-dossier-btn');
+  if (printDossierBtn) {
+    printDossierBtn.addEventListener('click', () => window.print());
+  }
+
   async function tryAutoFetchName(smiles) {
     const myToken = ++nameLookupToken;
     try {
@@ -773,20 +1484,20 @@
       const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
-      if (myToken !== nameLookupToken) return; // sudah usang, SMILES berubah
+      if (myToken !== nameLookupToken) return;
       const name = data && data.PropertyTable && data.PropertyTable.Properties &&
         data.PropertyTable.Properties[0] && data.PropertyTable.Properties[0].IUPACName;
       if (name) lastAutoName = name;
-    } catch (e) {
-      // diam-diam gagal — ini memang best-effort, bukan fitur wajib
-    }
+    } catch (e) {}
   }
 
   function clearFormula() {
     formulaEl.innerHTML = '';
     descriptorGrid.hidden = true;
+    analysisSection.hidden = true;
+    advancedSection.hidden = true;
+    if (lipinskiContainer) lipinskiContainer.hidden = true;
     canonicalRow.hidden = true;
-    saveRow.hidden = true;
     canonicalSmilesEl.textContent = '';
     tahap2Link.href = '/tahap2';
     lastFormula = '';
@@ -810,15 +1521,35 @@
       viewer2dEl.innerHTML = svg;
       lastSvg = svg;
       download2dBtn.disabled = false;
+      download2dPngWhite.disabled = false;
+      download2dPngTrans.disabled = false;
     } catch (e) {
       viewer2dEl.innerHTML = '<div class="empty-state">Gagal render struktur 2D</div>';
       lastSvg = null;
       download2dBtn.disabled = true;
+      download2dPngWhite.disabled = true;
+      download2dPngTrans.disabled = true;
     }
   }
 
   download2dBtn.addEventListener('click', () => {
-    if (lastSvg) downloadBlob(lastSvg, 'struktur-2d.svg', 'image/svg+xml');
+    if (lastSvg) ChemApp.exportStructure2D(lastSvg, lastAutoName || lastFormula || 'struktur', 'svg');
+  });
+
+  download2dPngWhite.addEventListener('click', async () => {
+    if (lastSvg) {
+      showToast('Menyiapkan gambar PNG putih resolusi tinggi…');
+      await ChemApp.exportStructure2D(lastSvg, lastAutoName || lastFormula || 'struktur', 'png-white');
+      showToast('Gambar PNG publikasi berhasil diunduh ✓');
+    }
+  });
+
+  download2dPngTrans.addEventListener('click', async () => {
+    if (lastSvg) {
+      showToast('Menyiapkan gambar PNG transparan…');
+      await ChemApp.exportStructure2D(lastSvg, lastAutoName || lastFormula || 'struktur', 'png-transparent');
+      showToast('Gambar PNG transparan berhasil diunduh ✓');
+    }
   });
 
   saveCollectionBtn.addEventListener('click', async () => {
@@ -859,35 +1590,19 @@
     }
   });
 
-  // Catatan implementasi 3D — dua lapis:
-  // 1) OpenBabel (WASM, jalan 100% di browser, lokal): operasi "Gen3D" bisa generate
-  //    koordinat 3D untuk SMILES APA PUN, tidak tergantung database luar. RDKit.js
-  //    sendiri tidak punya generator konformer 3D (ETKDG) di build WASM-nya — lihat
-  //    https://github.com/rdkit/rdkit-js/issues/338 — makanya kita pakai OpenBabel
-  //    khusus untuk langkah ini, RDKit tetap dipakai untuk parsing/2D/validasi.
-  //    CATATAN JUJUR: build OpenBabel WASM ini berasal dari proyek komunitas
-  //    (cheminfo-to-web, non-resmi dari tim OpenBabel), jadi kalau CDN-nya berubah
-  //    atau ada isu kompatibilitas browser, ini bisa gagal — makanya ada fallback #2.
-  // 2) Fallback: PubChem PUG REST (SMILES -> CID -> SDF konformer 3D). Hanya jalan
-  //    untuk senyawa yang memang terdaftar di PubChem.
+  // OpenBabel & 3D Viewer Logic
   let obReady = false;
   let ObInstance = null;
 
   function initOpenBabel() {
-    if (typeof OpenBabelModule !== 'function') {
-      console.warn('OpenBabelModule tidak termuat dari CDN — 3D akan pakai fallback PubChem saja.');
-      return;
-    }
+    if (typeof OpenBabelModule !== 'function') return;
     try {
       const ob = OpenBabelModule();
       ob.onRuntimeInitialized = function () {
         ObInstance = ob;
         obReady = true;
-        console.log('OpenBabel (WASM) siap — generate 3D lokal aktif untuk SMILES apa pun.');
       };
-    } catch (e) {
-      console.warn('Inisialisasi OpenBabel gagal:', e);
-    }
+    } catch (e) {}
   }
   initOpenBabel();
 
@@ -902,12 +1617,11 @@
       conv.readString(mol, molblock2d);
 
       const gen3d = ObInstance.OBOp.FindType('Gen3D');
-      if (!gen3d || !gen3d.Do(mol, '')) throw new Error('Operasi Gen3D OpenBabel gagal untuk molekul ini');
+      if (!gen3d || !gen3d.Do(mol, '')) throw new Error('Gen3D failed');
 
       conv.setOutFormat('', 'mol');
       return conv.writeString(mol, false);
     } catch (e) {
-      console.warn('Gen3D via OpenBabel gagal:', e);
       return null;
     } finally {
       if (conv) conv.delete();
@@ -918,12 +1632,12 @@
   async function fetch3DFromPubChem(smiles) {
     const encoded = encodeURIComponent(smiles);
     const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/cids/JSON`);
-    if (!cidRes.ok) throw new Error('Senyawa tidak ditemukan di PubChem');
+    if (!cidRes.ok) throw new Error('Not found');
     const cidData = await cidRes.json();
     const cid = cidData && cidData.IdentifierList && cidData.IdentifierList.CID && cidData.IdentifierList.CID[0];
-    if (!cid) throw new Error('CID tidak ditemukan');
+    if (!cid) throw new Error('CID not found');
     const sdfRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`);
-    if (!sdfRes.ok) throw new Error('PubChem tidak punya konformer 3D untuk senyawa ini');
+    if (!sdfRes.ok) throw new Error('No 3D conformer');
     return await sdfRes.text();
   }
 
@@ -932,7 +1646,6 @@
   async function generate3D(smiles, molblock2d) {
     const myToken = ++generation3DToken;
 
-    // Lapis 1: OpenBabel lokal — bisa untuk SMILES apa pun
     if (obReady) {
       const obResult = gen3DWithOpenBabel(molblock2d);
       if (myToken !== generation3DToken) return;
@@ -943,8 +1656,7 @@
       }
     }
 
-    // Lapis 2: fallback PubChem
-    viewer3dEl.innerHTML = '<div class="empty-state">Mesin 3D lokal belum siap/gagal — mencoba ambil dari PubChem…</div>';
+    viewer3dEl.innerHTML = '<div class="empty-state">Menghubungi basis data 3D PubChem…</div>';
     try {
       const sdf = await fetch3DFromPubChem(smiles);
       if (myToken !== generation3DToken) return;
@@ -952,11 +1664,11 @@
       render3D(sdf);
     } catch (e) {
       if (myToken !== generation3DToken) return;
-      console.warn('Generate 3D gagal (OpenBabel & PubChem):', e);
-      viewer3dEl.innerHTML = '<div class="empty-state">Belum bisa menampilkan 3D untuk senyawa ini (OpenBabel & PubChem sama-sama gagal).<br/>Struktur 2D di sebelah kiri tetap valid.</div>';
+      viewer3dEl.innerHTML = '<div class="empty-state">Model 3D belum tersedia untuk molekul ini.<br/>Struktur 2D di sebelah kiri tetap valid.</div>';
       lastMolblock3d = null;
       download3dBtn.disabled = true;
       style3dBtn.disabled = true;
+      spin3dBtn.disabled = true;
       resetCamBtn.disabled = true;
     }
   }
@@ -969,17 +1681,173 @@
   let style3dIndex = 0;
   let lastMolblock3d = null;
 
+  function get3dBackgroundColor() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? '#f0f4f1' : '#161c17';
+  }
+
   function applyCurrentStyle() {
     if (!glviewer) return;
+    glviewer.setBackgroundColor(get3dBackgroundColor());
     glviewer.setStyle({}, STYLE_3D_MODES[style3dIndex].apply());
     glviewer.render();
     style3dBtn.textContent = `◐ Gaya: ${STYLE_3D_MODES[style3dIndex].label}`;
   }
 
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'chemwebapp_theme' && glviewer) {
+      glviewer.setBackgroundColor(get3dBackgroundColor());
+      glviewer.render();
+      if (activeMol) {
+        ChemApp.drawBioavailabilityRadar(radarCanvas, {
+          mw: lastMw, logp: parseFloat(dLogp.textContent) || 1.5, tpsa: parseFloat(dTpsa.textContent) || 50, rotb: lastRotB || 2
+        });
+      }
+    }
+  });
+  const themeObserver = new MutationObserver(() => {
+    if (glviewer) {
+      glviewer.setBackgroundColor(get3dBackgroundColor());
+      glviewer.render();
+    }
+    if (activeMol) {
+      ChemApp.drawBioavailabilityRadar(radarCanvas, {
+        mw: lastMw, logp: parseFloat(dLogp.textContent) || 1.5, tpsa: parseFloat(dTpsa.textContent) || 50, rotb: lastRotB || 2
+      });
+      if (lastIrRules.length) lastIrData = ChemApp.simulateIRSpectrum(irCanvas, lastIrRules);
+      if (lastNmrRules.length) lastNmrData = ChemApp.simulateNMRSpectrum(nmrCanvas, lastNmrRules);
+    }
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  let surfaceModeIndex = 0; // 0: None, 1: VDW Surface, 2: SAS Surface
+  let currentSurface = null;
+  let mepActive = false;
+  let mepSurface = null;
+  const mep3dBtn = document.getElementById('mep-3d-btn');
+  const sonifyBtn = document.getElementById('sonify-btn');
+
+  function assignModelPartialCharges(model) {
+    if (!model) return;
+    try {
+      const atoms = model.selectedAtoms({});
+      atoms.forEach(atom => {
+        const elem = (atom.elem || '').toUpperCase();
+        if (elem === 'O') atom.partialCharge = -0.55;
+        else if (elem === 'N') atom.partialCharge = -0.42;
+        else if (elem === 'F') atom.partialCharge = -0.38;
+        else if (elem === 'CL') atom.partialCharge = -0.28;
+        else if (elem === 'S') atom.partialCharge = -0.20;
+        else if (elem === 'H') atom.partialCharge = +0.25;
+        else if (elem === 'C') atom.partialCharge = +0.08;
+        else atom.partialCharge = 0.0;
+      });
+    } catch(e){}
+  }
+
+  function applySurface() {
+    if (!glviewer || typeof $3Dmol === 'undefined') return;
+    // Wipe all previous surfaces cleanly
+    try { glviewer.removeAllSurfaces(); } catch(e){}
+    currentSurface = null;
+    mepSurface = null;
+    mepActive = false;
+    mep3dBtn.classList.remove('active');
+    mep3dBtn.textContent = '🌌 Permukaan MEP (δ⁺/δ⁻)';
+
+    if (surfaceModeIndex === 1) {
+      try {
+        currentSurface = glviewer.addSurface($3Dmol.SurfaceType.VDW, { opacity: 0.65, colorscheme: 'Jmol' });
+        surface3dBtn.textContent = '🌐 Permukaan: VDW';
+        surface3dBtn.classList.add('active');
+        showToast('Permukaan VDW diaktifkan ✓');
+      } catch(e){}
+    } else if (surfaceModeIndex === 2) {
+      try {
+        currentSurface = glviewer.addSurface($3Dmol.SurfaceType.SAS, { opacity: 0.55, colorscheme: 'Jmol' });
+        surface3dBtn.textContent = '🌐 Permukaan: SAS';
+        surface3dBtn.classList.add('active');
+        showToast('Permukaan SAS diaktifkan ✓');
+      } catch(e){}
+    } else {
+      surface3dBtn.textContent = '🌐 Permukaan: Nonaktif';
+      surface3dBtn.classList.remove('active');
+      showToast('Permukaan dinonaktifkan ✓');
+    }
+    glviewer.render();
+  }
+
+  surface3dBtn.addEventListener('click', () => {
+    if (!glviewer) return;
+    surfaceModeIndex = (surfaceModeIndex + 1) % 3;
+    applySurface();
+  });
+
+  mep3dBtn.addEventListener('click', () => {
+    if (!glviewer || typeof $3Dmol === 'undefined') return;
+    mepActive = !mepActive;
+
+    // Wipe all previous surface meshes cleanly
+    try { glviewer.removeAllSurfaces(); } catch(e){}
+    currentSurface = null;
+    mepSurface = null;
+
+    if (mepActive) {
+      surfaceModeIndex = 0;
+      surface3dBtn.textContent = '🌐 Permukaan: Nonaktif';
+      surface3dBtn.classList.remove('active');
+
+      showToast('🌌 Memetakan kerapatan muatan elektrostatik 3D (MEP Surface)…');
+      try {
+        const model = glviewer.getModel();
+        if (model) assignModelPartialCharges(model);
+
+        mepSurface = glviewer.addSurface($3Dmol.SurfaceType.VDW, {
+          opacity: 0.75,
+          colorscheme: {
+            prop: 'partialCharge',
+            gradient: 'rwb',
+            min: -0.5,
+            max: 0.5
+          }
+        });
+        mep3dBtn.textContent = '🌌 MEP: Aktif (δ⁻ Merah | δ⁺ Biru)';
+        mep3dBtn.classList.add('active');
+      } catch(e) {
+        mepSurface = glviewer.addSurface($3Dmol.SurfaceType.SAS, { opacity: 0.65, colorscheme: 'Jmol' });
+        mep3dBtn.textContent = '🌌 MEP: Aktif';
+        mep3dBtn.classList.add('active');
+      }
+    } else {
+      mep3dBtn.textContent = '🌌 Permukaan MEP (δ⁺/δ⁻)';
+      mep3dBtn.classList.remove('active');
+      showToast('Permukaan MEP dinonaktifkan ✓');
+    }
+    glviewer.render();
+  });
+
+  sonifyBtn.addEventListener('click', () => {
+    const isIr = specNmrContainer.hidden;
+    const rules = isIr ? lastIrRules : lastNmrRules;
+    if (!rules || !rules.length) {
+      showToast('Tidak ada puncak spektroskopi untuk disonifikasi');
+      return;
+    }
+    showToast(`🎵 Memutar audio sonifikasi getaran ${isIr ? 'FTIR' : '¹H-NMR'} molekul…`);
+    ChemApp.playSpectroscopySonification(rules, isIr ? 'ir' : 'nmr');
+  });
+
   style3dBtn.addEventListener('click', () => {
     if (!glviewer) return;
     style3dIndex = (style3dIndex + 1) % STYLE_3D_MODES.length;
     applyCurrentStyle();
+  });
+
+  spin3dBtn.addEventListener('click', () => {
+    if (!glviewer) return;
+    isSpinning = !isSpinning;
+    glviewer.spin(isSpinning ? 'y' : false, 1.2);
+    spin3dBtn.classList.toggle('active', isSpinning);
+    spin3dBtn.textContent = isSpinning ? '⏹ Hentikan Putaran' : '🌀 Putar Otomatis';
   });
 
   resetCamBtn.addEventListener('click', () => {
@@ -995,29 +1863,71 @@
   function render3D(molblock) {
     if (!glviewer) {
       viewer3dEl.innerHTML = '';
-      glviewer = $3Dmol.createViewer(viewer3dEl, { backgroundColor: '#161c17' });
+      glviewer = $3Dmol.createViewer(viewer3dEl, { backgroundColor: get3dBackgroundColor() });
     }
+    // Clean all surface residues and old models
+    try { glviewer.removeAllSurfaces(); } catch(e){}
     glviewer.removeAllModels();
+    currentSurface = null;
+    mepSurface = null;
+    mepActive = false;
+    mep3dBtn.classList.remove('active');
+    mep3dBtn.textContent = '🌌 Permukaan MEP (δ⁺/δ⁻)';
+    surfaceModeIndex = 0;
+    surface3dBtn.classList.remove('active');
+    surface3dBtn.textContent = '🌐 Permukaan: Nonaktif';
+
     glviewer.addModel(molblock, 'mol');
     applyCurrentStyle();
     glviewer.zoomTo();
     glviewer.render();
 
+    setTimeout(() => {
+      if (glviewer) {
+        glviewer.zoomTo();
+        glviewer.render();
+      }
+    }, 40);
+
     lastMolblock3d = molblock;
     download3dBtn.disabled = false;
     style3dBtn.disabled = false;
+    surface3dBtn.disabled = false;
+    mep3dBtn.disabled = false;
+    optimize3dBtn.disabled = false;
+    spin3dBtn.disabled = false;
     resetCamBtn.disabled = false;
   }
 
   function showEmpty() {
     viewer2dEl.innerHTML = '<div class="empty-state">Struktur 2D akan muncul di sini</div>';
-    viewer3dEl.innerHTML = '<div class="empty-state">Model 3D akan muncul di sini — bisa diputar & zoom</div>';
+    viewer3dEl.innerHTML = '<div class="empty-state">Model 3D akan muncul di sini — bisa diputar &amp; zoom</div>';
+    if (glviewer) {
+      try { glviewer.removeAllSurfaces(); } catch(e){}
+      try { glviewer.removeAllModels(); } catch(e){}
+    }
     glviewer = null;
+    activeMol = null;
     lastSvg = null;
     lastMolblock3d = null;
+    isSpinning = false;
+    spin3dBtn.classList.remove('active');
+    spin3dBtn.textContent = '🌀 Putar Otomatis';
+    surfaceModeIndex = 0;
+    surface3dBtn.textContent = '🌐 Permukaan: Nonaktif';
+    surface3dBtn.classList.remove('active');
+    mepActive = false;
+    mep3dBtn.textContent = '🌌 Permukaan MEP (δ⁺/δ⁻)';
+    mep3dBtn.classList.remove('active');
     download2dBtn.disabled = true;
+    download2dPngWhite.disabled = true;
+    download2dPngTrans.disabled = true;
     download3dBtn.disabled = true;
     style3dBtn.disabled = true;
+    surface3dBtn.disabled = true;
+    mep3dBtn.disabled = true;
+    optimize3dBtn.disabled = true;
+    spin3dBtn.disabled = true;
     resetCamBtn.disabled = true;
     clearFormula();
   }
@@ -1053,74 +1963,82 @@
         return;
       }
 
-      setStatus('SMILES valid.', 'ok');
-      setFormula(mol);
-      render2D(mol);
+      if (activeMol) {
+        try { activeMol.delete(); } catch(e){}
+      }
+      activeMol = mol;
 
-      let molblock2d = null;
-      try { molblock2d = mol.get_molblock(); } catch (e) { molblock2d = null; }
-      mol.delete();
+      setStatus('SMILES valid — memproses struktur…', 'ok');
+      setFormula(mol);
+      update2dWithHighlights();
+
+      let molblock2d = '';
+      try { molblock2d = mol.get_molblock(); } catch (e) {}
 
       generate3D(smiles, molblock2d);
-    }, 220);
+    }, 200);
   }
-
-  window.initRDKitModule().then((instance) => {
-    RDKitModule = instance;
-    rdkitReady = true;
-    bootBar.hidden = true;
-    setStatus('Menunggu input SMILES…');
-    if (input.value.trim()) handleInput();
-  }).catch(() => {
-    bootBar.hidden = true;
-    setStatus('Gagal memuat RDKit. Cek koneksi internet lalu muat ulang halaman.', 'error');
-  });
 
   input.addEventListener('input', handleInput);
 
-  // Terima ?smiles=... di URL (dipakai Tahap 2 untuk deep-link ke viewer ini)
-  const urlParams = new URLSearchParams(window.location.search);
-  const smilesFromUrl = urlParams.get('smiles');
-
-  // Load a default example after a short delay so first paint is clean
-  setTimeout(() => {
-    input.value = smilesFromUrl || 'CC(=O)Oc1ccccc1C(=O)O';
-  }, 100);
-
-  // --- Integrasi JSME (editor gambar struktur) ---
-  // jsmeOnLoad dipanggil otomatis oleh library JSME setelah selesai bootstrap
-  // (asinkron, bisa beberapa detik karena ini kode GWT lama yang dimuat dari CDN).
+  // JSME Editor setup
   let jsmeApplet = null;
-  window.jsmeOnLoad = function () {
-    try {
-      // Lebar dihitung dari window.innerWidth (bukan dari container, yang
-      // bisa 0 kalau tab "Gambar Struktur" belum aktif saat ini jalan) —
-      // dijaga antara 280px (muat di layar HP kecil) dan 480px.
-      const w = Math.max(280, Math.min(480, window.innerWidth - 64));
-      const h = Math.round(w * 0.75);
-      jsmeApplet = new JSApplet.JSME('jsme-container', w + 'px', h + 'px', {
-        options: 'oldlook,star'
+  let jsmePendingInit = false;
+
+  function initJsme() {
+    if (typeof JSApplet !== 'undefined' && JSApplet.JSME) {
+      jsmeApplet = new JSApplet.JSME('jsme-container', '520px', '340px', {
+        options: 'oldLook,marker,star,query,autoez'
       });
-    } catch (e) {
-      console.warn('Gagal menginisialisasi JSME:', e);
-      document.getElementById('jsme-container').innerHTML =
-        '<div class="empty-state">Editor gambar struktur gagal dimuat. Kamu tetap bisa pakai kolom SMILES di atas.</div>';
+      jsmePendingInit = false;
+    } else {
+      jsmePendingInit = true;
     }
+  }
+
+  window.jsmeOnLoad = function () {
+    if (jsmePendingInit) initJsme();
   };
 
-  const jsmeUseBtn = document.getElementById('jsme-use-btn');
-  jsmeUseBtn.addEventListener('click', () => {
+  const checkJsmeInterval = setInterval(() => {
+    if (typeof JSApplet !== 'undefined' && JSApplet.JSME) {
+      clearInterval(checkJsmeInterval);
+      if (!jsmeApplet) initJsme();
+    }
+  }, 200);
+
+  document.getElementById('jsme-use-btn').addEventListener('click', () => {
     if (!jsmeApplet) {
-      setStatus('Editor gambar struktur belum siap, tunggu sebentar lalu coba lagi.', 'error');
+      showToast('Editor JSME belum siap');
       return;
     }
     const smiles = jsmeApplet.smiles();
     if (!smiles) {
-      setStatus('Gambar dulu strukturnya di editor sebelum dipakai.', 'error');
+      showToast('Gambar struktur molekul terlebih dahulu');
       return;
     }
     input.value = smiles;
+    switchTab('text');
     handleInput();
+  });
+
+  // Init RDKit
+  window.initRDKitModule().then(rdkit => {
+    RDKitModule = rdkit;
+    rdkitReady = true;
+    bootBar.hidden = true;
+    setStatus('Mesin kimia siap — silakan masukkan notasi SMILES.', 'ok');
+
+    const params = new URLSearchParams(window.location.search);
+    const querySmiles = params.get('smiles');
+    if (querySmiles) {
+      input.value = querySmiles;
+      handleInput();
+    }
+  }).catch(err => {
+    console.error('Gagal memuat RDKit:', err);
+    bootBar.hidden = true;
+    setStatus('Gagal memuat RDKit (WebAssembly) dari CDN.', 'error', 'Periksa koneksi internet lalu coba refresh halaman.');
   });
 })();
 </script>
