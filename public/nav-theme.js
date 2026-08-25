@@ -1493,7 +1493,26 @@
 
       osc.start();
       osc.stop(ctx.currentTime + duration);
-    } catch(e) {}
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  function playSpectroscopySonification(rules, type = 'ir') {
+    if (!rules || !rules.length) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    
+    // Sort rules by some logic, e.g. for IR it's wavenumber (cm-1)
+    let sorted = [...rules];
+    
+    let now = ctx.currentTime;
+    sorted.forEach((rule, idx) => {
+      // Very simple mock sonification: calculate a base freq
+      let baseFreq = type === 'ir' ? 200 + (rule.value / 4000) * 800 : 300 + (rule.value / 12) * 600;
+      let dur = 0.3;
+      setTimeout(() => playMolecularTone(baseFreq, dur, 'sine', 0.2), idx * 300);
+    });
   }
 
   // 9. Pharmacopeia Essential Drug Presets (30 Essential Medications)
