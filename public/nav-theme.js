@@ -9,6 +9,25 @@
                    window.location.hostname.endsWith('github.io') ||
                    window.location.pathname.includes('/tahap-');
 
+  function getDynamicLink(stageNum, queryStr = '') {
+    if (stageNum === 0) return isStatic ? (window.location.pathname.includes('/tahap-') ? '../index.html' : 'index.html') : '/';
+    const folders = {
+      1: 'tahap-1-struktur-2d-3d',
+      2: 'tahap-2-pencarian-sifat',
+      3: 'tahap-3-database-koleksi',
+      4: 'tahap-4-analisis-komparasi',
+      5: 'tahap-5-lab-reaksi-sintesis',
+      6: 'tahap-6-docking-toksikologi'
+    };
+    if (isStatic) {
+      const isSub = window.location.pathname.includes('/tahap-');
+      const prefix = isSub ? '../' : '';
+      return `${prefix}${folders[stageNum]}/index.html${queryStr}`;
+    } else {
+      return `/tahap${stageNum}${queryStr}`;
+    }
+  }
+
   // 1. Theme Management
   const THEME_KEY = 'chemwebapp_theme';
   
@@ -521,7 +540,7 @@
       } catch (e) {}
     }
 
-    if (opts.showHbd) {
+    if (options.showHbd) {
       matchSmarts('[#7!H0,#8!H0,#16!H0]', m => {
         if (m.atoms) {
           m.atoms.forEach(idx => {
@@ -532,7 +551,7 @@
       });
     }
 
-    if (opts.showHba) {
+    if (options.showHba) {
       matchSmarts('[#7,#8,#16;!$([NX3;H2,H1])]', m => {
         if (m.atoms) {
           m.atoms.forEach(idx => {
@@ -543,7 +562,7 @@
       });
     }
 
-    if (opts.showAromatic) {
+    if (options.showAromatic) {
       matchSmarts('a', m => {
         if (m.atoms) {
           m.atoms.forEach(idx => {
@@ -554,7 +573,7 @@
       });
     }
 
-    if (opts.showChiral) {
+    if (options.showChiral) {
       matchSmarts('[C@H],[C@@H],[C@],[C@@],[#6;X4;!$(*#*)&!$(*=*)&!$(*:*)]', m => {
         if (m.atoms) {
           m.atoms.forEach(idx => {
@@ -565,7 +584,7 @@
       });
     }
 
-    if (opts.showRotB) {
+    if (options.showRotB) {
       matchSmarts('[!$(*#*)&!D1]-!@[!$(*#*)&!D1]', m => {
         if (m.bonds) {
           m.bonds.forEach(bidx => {
@@ -1831,6 +1850,7 @@
     closeCommandPalette,
     initCommandPalette,
     renderSendToHub,
+    getDynamicLink,
     PHARMACOPEIA_DRUGS,
     toggleTheme,
     applyTheme
