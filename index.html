@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -133,7 +133,7 @@
   </div>
 
   <div class="stage-grid">
-    <a class="stage-card" href="/tahap1">
+    <a class="stage-card" href="tahap-1-struktur-2d-3d/index.html">
       <div class="stage-card-icon">🔬</div>
       <div class="stage-card-num">Tahap 1</div>
       <div class="stage-card-title">SMILES → Visualizer 2D &amp; 3D</div>
@@ -141,7 +141,7 @@
       <div class="stage-card-arrow">Buka Viewer →</div>
     </a>
 
-    <a class="stage-card" href="/tahap2">
+    <a class="stage-card" href="tahap-2-pencarian-sifat/index.html">
       <div class="stage-card-icon">🔍</div>
       <div class="stage-card-num">Tahap 2</div>
       <div class="stage-card-title">Pencarian Nama &amp; Sifat</div>
@@ -149,7 +149,7 @@
       <div class="stage-card-arrow">Cari Senyawa →</div>
     </a>
 
-    <a class="stage-card" href="/tahap3">
+    <a class="stage-card" href="tahap-3-database-koleksi/index.html">
       <div class="stage-card-icon">📚</div>
       <div class="stage-card-num">Tahap 3</div>
       <div class="stage-card-title">Koleksi Database Pribadi</div>
@@ -157,7 +157,7 @@
       <div class="stage-card-arrow">Buka Koleksi →</div>
     </a>
 
-    <a class="stage-card" href="/tahap4">
+    <a class="stage-card" href="tahap-4-analisis-komparasi/index.html">
       <div class="stage-card-icon">⚖️</div>
       <div class="stage-card-num">Tahap 4</div>
       <div class="stage-card-title">Komparasi &amp; Tanimoto Similarity</div>
@@ -165,7 +165,7 @@
       <div class="stage-card-arrow">Mulai Komparasi →</div>
     </a>
 
-    <a class="stage-card" href="/tahap5">
+    <a class="stage-card" href="tahap-5-lab-reaksi-sintesis/index.html">
       <div class="stage-card-icon">⚗️</div>
       <div class="stage-card-num">Tahap 5</div>
       <div class="stage-card-title">Lab Reaksi &amp; Desain Sintesis</div>
@@ -173,7 +173,7 @@
       <div class="stage-card-arrow">Buka Lab Reaksi →</div>
     </a>
 
-    <a class="stage-card" href="/tahap6">
+    <a class="stage-card" href="tahap-6-docking-toksikologi/index.html">
       <div class="stage-card-icon">🧬</div>
       <div class="stage-card-num">Tahap 6</div>
       <div class="stage-card-title">Docking 3D, Toksikologi &amp; HPLC</div>
@@ -187,23 +187,6 @@
 
 <script src="public/nav-theme.js"></script>
 <script>
-  // Detect static vs dynamic context
-  const isStaticHost = window.location.protocol === 'file:' || 
-                       window.location.hostname.endsWith('github.io');
-  if (isStaticHost) {
-    const cards = document.querySelectorAll('.stage-card');
-    const folders = [
-      'tahap-1-struktur-2d-3d/index.html',
-      'tahap-2-pencarian-sifat/index.html',
-      'tahap-3-database-koleksi/index.html',
-      'tahap-4-analisis-komparasi/index.html',
-      'tahap-5-lab-reaksi-sintesis/index.html',
-      'tahap-6-docking-toksikologi/index.html'
-    ];
-    cards.forEach((card, idx) => {
-      card.setAttribute('href', folders[idx]);
-    });
-  }
   ChemApp.mountChemNavbar(0);
 </script>
 </body>
