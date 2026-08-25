@@ -1470,9 +1470,12 @@
       let canonical = '';
       try { canonical = mol.get_smiles(); } catch (e) { canonical = ''; }
       if (canonical) {
+        tahap2Link.href = ChemApp.getDynamicLink(2, '?smiles=' + encodeURIComponent(canonical));
+        document.getElementById('canonical-row').hidden = false;
         canonicalSmilesEl.textContent = canonical;
-        canonicalRow.hidden = false;
-        tahap2Link.href = '/tahap2?smiles=' + encodeURIComponent(canonical);
+        
+        let urlSmi = encodeURIComponent(canonical);
+        formatConverterBtn.onclick = () => showConverterModal(urlSmi);
         const hubWrap = document.getElementById('sendto-hub-wrap');
         if (hubWrap && ChemApp.renderSendToHub) {
           hubWrap.innerHTML = '';
@@ -1481,8 +1484,8 @@
         lastAutoName = '';
         tryAutoFetchName(canonical);
       } else {
-        canonicalRow.hidden = true;
-        tahap2Link.href = '/tahap2';
+        document.getElementById('canonical-row').hidden = true;
+        tahap2Link.href = ChemApp.getDynamicLink(2);
       }
     } catch (e) {
       clearFormula();
@@ -1517,7 +1520,7 @@
     if (lipinskiContainer) lipinskiContainer.hidden = true;
     canonicalRow.hidden = true;
     canonicalSmilesEl.textContent = '';
-    tahap2Link.href = '/tahap2';
+    tahap2Link.href = ChemApp.getDynamicLink(2);
     lastFormula = '';
     lastMw = null;
     lastMonoMass = null;
